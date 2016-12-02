@@ -47,5 +47,5 @@ debbuild: test sdist
 
 clean:
 	pyclean .
-	rm -rf build dist debbuild
+	rm -rf build dist debbuild .tox
 	rm -f MANIFEST
