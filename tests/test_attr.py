@@ -81,12 +81,12 @@ class MyTest(unittest.TestCase):
         myobj = MyObject(foo=23)
         self.assertEqual(
             six.text_type(myobj.toJSON()),
-            '{"__attr.MyObject__": {"foo": 23}}'
+            '{"__test_attr.MyObject__": {"foo": 23}}'
         )
 
         self.assertEqual(
             six.text_type(myobj.toJSON(style="flat", sort_keys=True)),
-            '{"__class__": "__attr.MyObject__", "foo": 23}'
+            '{"__class__": "__test_attr.MyObject__", "foo": 23}'
         )
 
         self.assertEqual(
