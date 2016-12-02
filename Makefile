@@ -20,7 +20,7 @@ PKG_VERSION = $(shell python -c 'import re; print(re.search("__version__ = \"([\
 
 test:
 	python3 -m unittest  discover -s t -p '*.py'
-	python2 -m unittest2 discover -s t -p '*.py'
+	python2 -m unittest  discover -s t -p '*.py'
 
 check:
 	python3 -m flake8 --config=extra/flake8.ini amethyst/core/*.py
