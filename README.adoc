@@ -28,14 +28,17 @@ free for attributes of (most of the) core python object types.
 
 A Basic Class:
 
-    from amethyst.core import Object, Attr
+[source,python]
+----
+from amethyst.core import Object, Attr
 
-    class MyObject(Object):
-        foo = Attr(int)
-        bar = Attr(isa=str).strip()
+class MyObject(Object):
+    foo = Attr(int)
+    bar = Attr(isa=str).strip()
 
-    myobj = MyObject(foo=23)
-    print(myobj.foo)      # => 23
+myobj = MyObject(foo=23)
+print(myobj.foo)      # => 23
+----
 
 
 === Validation / Coersion
@@ -44,49 +47,70 @@ IMPORTANT: Attributes are validated and coerced only when processed by
 certain methods. This is a somewhat controvercial choice, but allows us to
 only pay the validation costs when loading from external/untrusted sources.
 
-    class MyObject(Object):
-        foo = Attr(int)               # coerce to int
-        bar = Attr(isa=str).strip()   # ensure str then strip whitespace
+[source,python]
+----
+class MyObject(Object):
+    foo = Attr(int)               # coerce to int
+    bar = Attr(isa=str).strip()   # ensure str then strip whitespace
+----
 
 ==== Validated
 
 * dictionary constructor
 
-    myobj = MyObject({ "foo": "23", "bar": "Hello " })
-    print(isinstance(myobj.foo, int))       # True
-    print(myobj.bar)                        # "Hello"
+[source,python]
+----
+myobj = MyObject({ "foo": "23", "bar": "Hello " })
+print(isinstance(myobj.foo, int))       # True
+print(myobj.bar)                        # "Hello"
+----
 
 * set and load_data methods
 
-    myobj.setdefault("foo", "Not an int")   # Raises exception if foo unset
-    myobj.set("foo", "Not an int")          # Raises exception
+[source,python]
+----
+myobj.setdefault("foo", "Not an int")   # Raises exception if foo unset
+myobj.set("foo", "Not an int")          # Raises exception
 
-    # Raises exception
-    myobj.load_data({"foo": "23", "bar": "Hello "})
+# Raises exception
+myobj.load_data({"foo": "23", "bar": "Hello "})
+----
 
 * loading from JSON
 
-    # Raises exception
-    myobj = MyObject.newFromJSON('{"foo": "23", "bar": "Hello "}')
-    myobj.fromJSON('{"foo": "23", "bar": "Hello "}')
+[source,python]
+----
+# Raises exception
+myobj = MyObject.newFromJSON('{"foo": "23", "bar": "Hello "}')
+myobj.fromJSON('{"foo": "23", "bar": "Hello "}')
+----
 
 
 ==== Not Validated
 
 * kwargs constructor
 
-    myobj = MyObject(foo="23", bar="Hello ")
-    print(isinstance(myobj.foo, int))       # False
-    print(myobj.bar)                        # "Hello "
+[source,python]
+----
+myobj = MyObject(foo="23", bar="Hello ")
+print(isinstance(myobj.foo, int))       # False
+print(myobj.bar)                        # "Hello "
+----
 
 * assignment
 
-    myobj.foo = "Not an int"                # Not an exception!
-    myobj["foo"] = "Not an int"             # Not an exception!
+[source,python]
+----
+myobj.foo = "Not an int"                # Not an exception!
+myobj["foo"] = "Not an int"             # Not an exception!
+----
 
 * update method
 
-    myobj.update(foo="Not an int")          # Not an exception!
+[source,python]
+----
+myobj.update(foo="Not an int")          # Not an exception!
+----
 
 
 === Serialization
@@ -94,17 +118,23 @@ only pay the validation costs when loading from external/untrusted sources.
 We immediately get instantiation and loading from JSON or from vanilla
 dictionaries:
 
-    myobj = MyObject.newFromJSON(
-        '{"foo":23, "bar":" plugh  "}',
-        verifyclass=False
-    )
-    print(myobj.bar)      # => "plugh"  (spaces stripped)
+[source,python]
+----
+myobj = MyObject.newFromJSON(
+    '{"foo":23, "bar":" plugh  "}',
+    verifyclass=False
+)
+print(myobj.bar)      # => "plugh"  (spaces stripped)
+----
 
 JSON gets some special treatment, but anything that produces an appropriate
 dictionary will work for serialization.
 
-    myobj = MyObject()
-    myobj.load_data(yaml.load(open("myobject.yaml")))
+[source,python]
+----
+myobj = MyObject()
+myobj.load_data(yaml.load(open("myobject.yaml")))
+----
 
 By default, import and export try to make sure that the object is a
 serialization of the correct type of object. Metadata are automatically,
@@ -117,27 +147,36 @@ This metadata can be encoded in two different ways depending on what you
 find most convenient for your situation (the "single-key" style is the
 default):
 
-    myobj = MyObject(foo=23)
+[source,python]
+----
+myobj = MyObject(foo=23)
 
-    print(myobj.toJSON())     # The default, style="single-key"
-    # => {"__mymodule.MyObject__": {"foo": 23}}
+print(myobj.toJSON())     # The default, style="single-key"
+# => {"__mymodule.MyObject__": {"foo": 23}}
 
-    print(myobj.toJSON(style="flat"))
-    # => {"__class__": "MyObject", "foo": 23}
+print(myobj.toJSON(style="flat"))
+# => {"__class__": "MyObject", "foo": 23}
 
-    print(myobj.toJSON(includeclass=False))
-    # => { "foo": 23 }
+print(myobj.toJSON(includeclass=False))
+# => { "foo": 23 }
+----
 
 If you want no munging or class verification at all, set class parameters:
 
-    class MyObject(Object):
-        amethyst_includeclass  = False
-        amethyst_verifyclass   = False
+[source,python]
+----
+class MyObject(Object):
+    amethyst_includeclass  = False
+    amethyst_verifyclass   = False
 
-        foo = Attr(int)
-        bar = Attr(isa=str).strip()
+    foo = Attr(int)
+    bar = Attr(isa=str).strip()
+----
 
-    # No extra class info due to modified defaults:
-    myobj = MyObject.newFromJSON('{"foo":"23", "bar":" plugh  "}')
-    print(myobj.toJSON())
-    # => { "foo": 23, "bar": "plugh" }
+[source,python]
+----
+# No extra class info due to modified defaults:
+myobj = MyObject.newFromJSON('{"foo":"23", "bar":" plugh  "}')
+print(myobj.toJSON())
+# => { "foo": 23, "bar": "plugh" }
+----
