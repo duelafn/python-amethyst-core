@@ -29,4 +29,5 @@ setup(
     author_email = 'dean@serenevy.net',
     description  = "A sober python base library",
     packages     = [ 'amethyst', 'amethyst.core' ],
+    requires     = [ "six", ],
 )
