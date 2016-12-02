@@ -19,6 +19,10 @@ PKG_VERSION = $(shell python -c 'import re; print(re.search("__version__ = \"([\
 
 
 test:
+	python3 -m unittest  discover -s tests
+	python2 -m unittest  discover -s tests
+
+tox:
 	tox
 
 check:
