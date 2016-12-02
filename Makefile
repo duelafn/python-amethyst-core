@@ -19,8 +19,11 @@ PKG_VERSION = $(shell python -c 'import re; print(re.search("__version__ = \"([\
 
 
 test:
-	python3 -m unittest  discover -s t -p '*.py'
-	python2 -m unittest  discover -s t -p '*.py'
+	python3 -m unittest  discover -s tests
+	python2 -m unittest  discover -s tests
+
+tox:
+	tox
 
 check:
 	python3 -m flake8 --config=extra/flake8.ini amethyst/core/*.py
@@ -48,5 +51,5 @@ debbuild: test sdist
 
 clean:
 	pyclean .
-	rm -rf build dist debbuild
+	rm -rf build dist debbuild .tox
 	rm -f MANIFEST
