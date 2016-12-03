@@ -27,6 +27,7 @@ class MyTest(unittest.TestCase):
 
     def test_README_validation(self):
         class MyObject(Object):
+            amethyst_verifyclass = False
             amethyst_register_type = False
             foo = Attr(int)
             bar = Attr(isa=six.text_type).strip()
@@ -43,14 +44,18 @@ class MyTest(unittest.TestCase):
             myobj.setdefault("foo", "Not an int")   # Raises exception if foo unset
         with self.assertRaises(ValueError):
             myobj.set("foo", "Not an int")          # Raises exception
-        with self.assertRaises(ValueError):
-            myobj.load_data({"foo": "23", "bar": "Hello "})
+
+        myobj.load_data({"foo": "23", "bar": "Hello "})
+        self.assertEqual(myobj.foo, 23)
+        self.assertEqual(myobj.bar, "Hello")
 
         # loading from JSON
-        with self.assertRaises(ValueError):
-            myobj.fromJSON('{"foo": "23", "bar": "Hello "}')
-        with self.assertRaises(ValueError):
-            myobj = MyObject.newFromJSON('{"foo": "23", "bar": "Hello "}')
+        myobj.fromJSON('{"foo": "23", "bar": "Hello "}')
+        self.assertEqual(myobj.foo, 23)
+        self.assertEqual(myobj.bar, "Hello")
+        myobj = MyObject.newFromJSON('{"foo": "23", "bar": "Hello "}')
+        self.assertEqual(myobj.foo, 23)
+        self.assertEqual(myobj.bar, "Hello")
 
         # kwargs constructor
         myobj = MyObject(foo="23", bar="Hello ")

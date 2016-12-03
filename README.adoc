@@ -72,7 +72,7 @@ print(myobj.bar)                        # "Hello"
 myobj.setdefault("foo", "Not an int")   # Raises exception if foo unset
 myobj.set("foo", "Not an int")          # Raises exception
 
-# Raises exception
+# Converts and trims
 myobj.load_data({"foo": "23", "bar": "Hello "})
 ----
 
@@ -80,7 +80,7 @@ myobj.load_data({"foo": "23", "bar": "Hello "})
 
 [source,python]
 ----
-# Raises exception
+# Converts and trims
 myobj = MyObject.newFromJSON('{"foo": "23", "bar": "Hello "}')
 myobj.fromJSON('{"foo": "23", "bar": "Hello "}')
 ----
