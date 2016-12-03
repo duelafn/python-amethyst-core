@@ -50,6 +50,7 @@ only pay the validation costs when loading from external/untrusted sources.
 [source,python]
 ----
 class MyObject(Object):
+    amethyst_verifyclass = False  # don't check json for class name
     foo = Attr(int)               # coerce to int
     bar = Attr(isa=str).strip()   # ensure str then strip whitespace
 ----
