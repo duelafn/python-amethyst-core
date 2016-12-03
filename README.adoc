@@ -156,7 +156,7 @@ print(myobj.toJSON())     # The default, style="single-key"
 # => {"__mymodule.MyObject__": {"foo": 23}}
 
 print(myobj.toJSON(style="flat"))
-# => {"__class__": "MyObject", "foo": 23}
+# => {"__class__": "__mymodule.MyObject__", "foo": 23}
 
 print(myobj.toJSON(includeclass=False))
 # => { "foo": 23 }
