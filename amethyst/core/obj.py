@@ -181,6 +181,13 @@ class Attr(object):
         @param verify: Attribute verifier. Called after conversion, this
         callable should return a truthy result if the value is acceptable.
 
+        @param default: Default value applied at object creation time. If
+        default is a callable, it will be called to produce the default
+        (e.g., `list`).
+
+        @param builder: Callable which will lazily build a default value
+        when the attribute is first used.
+
         @param fget, fset, fdel: If any of these functions are defined,
         they will be used to construct the object property. If all three
         are none (the default), then the functions which get/set/del the
@@ -208,6 +215,10 @@ class Attr(object):
                 try:
                     return obj.dict[name]
                 except KeyError:
+                    # default happens before builder
+                    if self.default is not None:
+                        obj.dict[name] = self.get_default()
+                        return obj.dict[name]
                     if self.builder is not None:
                         obj.dict[name] = self.builder()
                         return obj.dict[name]
@@ -221,6 +232,12 @@ class Attr(object):
             return property(fget, fset, fdel, self.doc)
         else:
             return property(self.fget, self.fset, self.fdel, self.doc)
+
+    def get_default(self):
+        if callable(self.default):
+            return self.default()
+        else:
+            return self.default
 
     def __call__(self, value):
         if self.convert:
@@ -469,8 +486,6 @@ class AttrsMetaclass(type):
             if hasattr(new_cls, name):
                 raise Exception("Attribute {} in {} already defined in a parent class.".format(name, cls.__name__))
             setattr(new_cls, name, attr.build_property(name))
-            if attr.default is not None:
-                new_cls._defaults[name] = attr.default
 
         new_cls._attrs.update(new_attrs)
         new_cls._dundername = "__{}.{}__".format(new_cls.__module__, new_cls.__name__)
@@ -484,7 +499,6 @@ class AttrsMetaclass(type):
 #   https://wiki.python.org/moin/PortingToPy3k/BilingualQuickRef#metaclasses
 BaseObject = AttrsMetaclass(str('BaseObject'), (), {
     "_attrs": {},
-    "_defaults": {},
     "_jsonencoders": {},
     "_jsonhooks": {},
 })
@@ -549,6 +563,10 @@ class Object(BaseObject):
             else:
                 # Just a dict passed use standard load data method
                 self.load_data(data, verifyclass=False)
+
+        for name, attr in six.iteritems(self._attrs):
+            if attr.default is not None and name not in self.dict:
+                self.dict[name] = attr.get_default()
 
     def assert_mutable(self, msg="May not modify, object is immutable"):
         if not self._mutable_:
@@ -633,7 +651,7 @@ class Object(BaseObject):
             if name in d:
                 data[name] = attr(d[name])
             elif attr.default is not None:
-                data[name] = attr.default
+                data[name] = attr.get_default()
         if keys:
             raise ValueError("keys {} not permitted in {} object".format(keys, self._dundernam))
         return data

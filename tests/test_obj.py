@@ -125,5 +125,23 @@ class MyTest(unittest.TestCase):
         self.assertEqual(obj.get("bab"), {"__bob__": "chaz"}, "jsonhooks extensions do no modify base classes")
 
 
+    def test_default(self):
+        class Obj4(Object):
+            foo = Attr(int, default=3)
+            bar = Attr(default=list)
+            baz = Attr(default=[])
+
+        a = Obj4()
+        b = Obj4()
+
+        self.assertEqual(a.foo, 3, "default int a")
+        self.assertEqual(b.foo, 3, "default int b")
+
+        self.assertIsInstance(a.bar, list, "default list constructor")
+        self.assertIsInstance(a.baz, list, "default list")
+
+        self.assertFalse(a.bar is b.bar, "default list constructor initializes different objects")
+        self.assertTrue(a.baz is b.baz, "default list initializes identical object")
+
 if __name__ == '__main__':
     unittest.main()
