@@ -4,11 +4,6 @@
 from __future__ import division, absolute_import, print_function, unicode_literals
 import unittest
 
-import sys
-from os.path import dirname, abspath
-sys.path.insert(1, dirname(dirname(abspath(__file__))))
-
-
 from amethyst.core import *
 
 class Foo(object):
