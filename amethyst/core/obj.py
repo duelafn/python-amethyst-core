@@ -601,10 +601,17 @@ class Object(BaseObject):
     def get(self, key, dflt=None):
         return self.dict.get(key, dflt)
 
-    def set(self, key, value):
-        """Verify then set canonicalized value"""
+    def set(self, *args, **kwargs):
+        """
+        Verify then set canonicalized value. Positional args take precedence over kwargs.
+
+            obj.set(key, val)
+            obj.set(foo=val)
+        """
         self.assert_mutable()
-        return self.dict.update(self.validate_update({ key: value }))
+        for i in range(0, len(args), 2):
+            kwargs[args[i]] = args[i+1]
+        return self.dict.update(self.validate_update(kwargs))
 
     def setdefault(self, key, value):
         """If missing a value, verify then set"""

@@ -21,6 +21,9 @@ class MyTest(unittest.TestCase):
         self.assertEqual(myobj.foo, 23)
         self.assertEqual(myobj.bar, "Hello")
 
+        myobj.set("foo", 15, foo=5)
+        self.assertEqual(myobj.foo, 15, ".set() takes positional or kwargs and prefers positional")
+
     def test_README_validation(self):
         class MyObject(Object):
             amethyst_verifyclass = False
