@@ -15,6 +15,7 @@ class MyTest(unittest.TestCase):
             amethyst_register_type = False
             foo = Attr(int)
             bar = Attr(isa=six.text_type).strip()
+            baz = Attr(isa=(int, list))
 
         myobj = MyObject(dict(foo=23, bar=" Hello "))
 
@@ -23,6 +24,14 @@ class MyTest(unittest.TestCase):
 
         myobj.set("foo", 15, foo=5)
         self.assertEqual(myobj.foo, 15, ".set() takes positional or kwargs and prefers positional")
+
+        # Explicitly support list/tuple of isa types
+        myobj.set(baz=23)
+        self.assertEqual(myobj.baz, 23, "isa tuple:int")
+        myobj.set(baz=["foo", "bar"])
+        self.assertEqual(myobj.baz, ["foo", "bar"], "isa tuple:list")
+        with self.assertRaises(ValueError):
+            myobj.set("foo", "Not an int or list")
 
     def test_README_validation(self):
         class MyObject(Object):
