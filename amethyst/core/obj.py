@@ -487,6 +487,7 @@ class AttrsMetaclass(type):
                 raise Exception("Attribute {} in {} already defined in a parent class.".format(name, cls.__name__))
             setattr(new_cls, name, attr.build_property(name))
 
+        new_cls._attrs = new_cls._attrs.copy()
         new_cls._attrs.update(new_attrs)
         new_cls._dundername = "__{}.{}__".format(new_cls.__module__, new_cls.__name__)
 

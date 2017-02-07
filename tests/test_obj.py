@@ -26,32 +26,13 @@ class MyTest(unittest.TestCase):
         obj = Object.newFromJSON('{"__amethyst.core.obj.Object__": {}}')
         obj = Object.newFromJSON('{"__class__": "__amethyst.core.obj.Object__"}')
 
+        self.assertIsNone(obj.get("__class__"), "fromJSON removes __class__ key")
+
         with self.assertRaises(ValueError, msg="class verification works"):
             obj = Object.newFromJSON('{"__amethyst.core.obj.NotObject__": {}}')
 
-        return
-
-        json_value = json.loads(obj.toJSON())
-        self.assertEqual(set(json_value.keys()), set(["flags", "id", "__class__"]), "JSON Export - keys")
-        self.assertEqual(json_value["__class__"], "Object", "JSON Export - __class__")
-        self.assertEqual(json_value["id"], obj.id, "JSON Export - id")
-        self.assertEqual(list(json_value["flags"].keys()), ["__set__"], "JSON Export - flags")
-        self.assertEqual(sorted(json_value["flags"]["__set__"]), ["bar", "foo"], "JSON Export - flag set")
-
-        obj.fromJSON('{"flags": {"__set__": ["chaz"]}, "id": "12345", "__class__": "Object"}')
-        self.assertIsNone(obj.get("__class__"), "fromJSON removes __class__ key")
-        self.assertTrue(obj.has_flag("chaz"), "fromJSON sets new flags")
-        self.assertFalse(obj.has_flag("foo"), "fromJSON replaces old flags")
-
-        with self.assertRaises(JSONValidationException, msg="Invalid if __class__ is missing"):
-            obj.fromJSON('{"flags": {"__set__": ["chaz"]}, "id": "12345"}')
-
-        self.assertIs(obj.fromJSON('{"flags": {"__set__": ["chaz"]}, "id": "12345"}', verifyclass=False), obj, "verifyclass=False allows missing __class__")
-
-        with self.assertRaises(JSONValidationException, msg="Invalid if unexpected keys"):
-            obj.fromJSON('{"flags": {"__set__": ["chaz"]}, "id": "12345", "__class__": "Object", "blob": 23}')
-
-        self.assertIs(obj.fromJSON('{"flags": {"__set__": ["chaz"]}, "id": "12345", "__class__": "Object", "blob": 23}', strictkeys=False), obj, "strictkey=False allows unexpected keys")
+        with self.assertRaises(ValueError, msg="Invalid if __class__ is missing"):
+            obj.fromJSON('{}')
 
 
     def test_immutability(self):
@@ -106,19 +87,18 @@ class MyTest(unittest.TestCase):
         class Obj3(Obj):
             jsonhooks = { "__bob__": (lambda obj: "BOB") }
             bab = Attr(int)
+            flags = Attr(isa=set)
 
         self.assertTrue(hasattr(Obj3, "foo"), "Attrs are inherited")
 
-        return
-
         obj = Obj3()
-        obj.fromJSON('{"__class__": "Obj3", "bab": {"__bob__": "chaz"}, "flags": {"__set__": ["chaz"]}, "id": "12345"}')
-        self.assertEqual(obj.bab, "BOB", "jsonhooks extensions")
+        obj.fromJSON('{"__class__": "__test_obj.Obj3__", "bar": {"__bob__": "chaz"}, "flags": {"__set__": ["chaz"]}, "baz": "123.45"}')
+        self.assertEqual(obj.bar, "BOB", "jsonhooks extensions")
         self.assertEqual(list(obj.flags)[0], "chaz", "jsonhooks extensions inherit originals")
 
         obj = Object()
-        obj.fromJSON('{"__class__": "Object", "bab": {"__bob__": "chaz"}, "flags": {"__set__": ["chaz"]}, "id": "12345"}')
-        self.assertEqual(obj.get("bab"), {"__bob__": "chaz"}, "jsonhooks extensions do no modify base classes")
+        obj.fromJSON('{"__class__": "__amethyst.core.obj.Object__", "bab": {"__bob__": "chaz"}, "flags": {"__set__": ["chaz"]}, "baz": "123.45"}', import_strategy="sloppy")
+        self.assertEqual(obj.get("bab"), {"__bob__": "chaz"}, "jsonhooks extensions do not modify base classes")
 
 
     def test_default(self):
