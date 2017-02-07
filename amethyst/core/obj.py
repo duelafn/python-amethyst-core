@@ -517,15 +517,18 @@ class Object(BaseObject):
     or a dict passed to `load_data()` will check for the "__class__" key
     described above, and an exception will be thrown if it is not found.
 
-    @cvar amethyst_strictkeys: If True (the default), then when loading data
-    from JSON or a dictionary via `load_data()` all keys present in the
-    data structure must correspond to keys in the attribute list. If any
-    additional keys are present, an exception will be raised.
+    @cvar amethyst_import_strategy: When "strict" (the default), then
+    loading data from JSON or a dictionary via `load_data()` requires all
+    keys present in the data structure to correspond with keys in the
+    attribute list. If any additional keys are present, an exception will
+    be raised. When "loose", additional keys will be ignored and not copied
+    into the object dictionary. When "sloppy", unknown attributes will be
+    copied unmodified into the object dict.
     """
     amethyst_register_type = True
     amethyst_includeclass  = True
     amethyst_verifyclass   = True
-    amethyst_strictkeys    = True
+    amethyst_import_strategy = "strict"
     amethyst_classhint_style = "flat"
 
     def __init__(self, *args, **kwargs):
@@ -635,7 +638,7 @@ class Object(BaseObject):
             self.dict.update(kwargs)
         return self
 
-    def validate_data(self, d, strictkeys=None):
+    def validate_data(self, d, import_strategy=None):
         """
         Convert and validate with the intention of updating only some of
         the object's .dict values. Returns a new dictionary with
@@ -650,9 +653,16 @@ class Object(BaseObject):
 
             validated = myobj.validate_data(data)
             mynewobj = MyClass(**validated)
+
+        Subclasses of `Object` can also use this method to inflate specific
+        attibutes at load time. For instance, to inflate non-`Object`
+        objects or ensure objects from hand-written config files. Be sure to
+        override `validate_update` as well if programmatic updates may need
+        special inflation rules.
         """
-        data = dict()
-        keys = set(d.keys()) if coalesce(strictkeys, self.amethyst_strictkeys) else set()
+        strategy = coalesce(import_strategy, self.amethyst_import_strategy)
+        data = d.copy() if strategy == "sloppy" else dict()
+        keys = set(d.keys()) if strategy == "strict" else set()
         for name, attr in six.iteritems(self._attrs):
             keys.discard(name)
             if name in d:
@@ -663,7 +673,7 @@ class Object(BaseObject):
             raise ValueError("keys {} not permitted in {} object".format(keys, self._dundernam))
         return data
 
-    def validate_update(self, d, strictkeys=None):
+    def validate_update(self, d, import_strategy=None):
         """
         Convert and validate with the intention of updating only some of
         the object's .dict values. Returns a new dictionary with
@@ -672,11 +682,11 @@ class Object(BaseObject):
         This method does not change the object. Pass the resulting dict to
         the .update() method if you decide to accept the changes.
         """
-        data = dict()
-        strictkeys = coalesce(strictkeys, self.amethyst_strictkeys)
+        strategy = coalesce(import_strategy, self.amethyst_import_strategy)
+        data = d.copy() if strategy == "sloppy" else dict()
         for key, val in six.iteritems(d):
             attr = self._attrs.get(key)
-            if attr is None and strictkeys:
+            if attr is None and strategy == "strict":
                 raise ValueError("key {} not permitted in {} object".format(key, self._dundername))
             elif attr is not None:
                 data[key] = attr(val)
@@ -695,12 +705,12 @@ class Object(BaseObject):
                 return False
         return False
 
-    def load_data(self, data, strictkeys=None, verifyclass=None):
+    def load_data(self, data, import_strategy=None, verifyclass=None):
         """
         Loads a data dictionary with validation. Modifies the passed dict
         and replaces current self.dict object with the one passed.
 
-        @param strictkeys: Provides a local override to the `amethyst_strictkeys` class attribute.
+        @param import_strategy: Provides a local override to the `amethyst_import_strategy` class attribute.
         @param verifyclass: Provides a local override to the `amethyst_verifyclass` class attribute.
 
         This method transparently loads data in either "single-key" or "flat" formats:
@@ -745,7 +755,7 @@ class Object(BaseObject):
         data.pop("__class__", None)
 
         # Run the validator
-        self.dict = self.validate_data(data, strictkeys=strictkeys)
+        self.dict = self.validate_data(data, import_strategy=import_strategy)
         return self
 
     def JSONEncoder(self, obj):
@@ -852,20 +862,20 @@ class Object(BaseObject):
         return rv
 
     @classmethod
-    def newFromJSON(cls, data, strictkeys=None, verifyclass=None, **kwargs):
+    def newFromJSON(cls, data, import_strategy=None, verifyclass=None, **kwargs):
         self = cls()
         mutable = self.is_mutable()# In case some subclass is default immutable
         if not mutable: self.make_mutable()
-        self.fromJSON(data, strictkeys=strictkeys, verifyclass=verifyclass, **kwargs)
+        self.fromJSON(data, import_strategy=import_strategy, verifyclass=verifyclass, **kwargs)
         if not mutable: self.make_immutable()
         return self
 
-    def fromJSON(self, data, strictkeys=None, verifyclass=None, **kwargs):
+    def fromJSON(self, data, import_strategy=None, verifyclass=None, **kwargs):
         """
         Paramters are sent directly to json.loads except:
 
-        @param strictkeys: Provides a local override to the `amethyst_strictkeys` class attribute.
+        @param import_strategy: Provides a local override to the `amethyst_import_strategy` class attribute.
         @param verifyclass: Provides a local override to the `amethyst_verifyclass` class attribute.
         """
         kwargs.setdefault('object_hook', self.JSONObjectHook)
-        return self.load_data(json.loads(data, **kwargs), strictkeys=strictkeys, verifyclass=verifyclass)
+        return self.load_data(json.loads(data, **kwargs), import_strategy=import_strategy, verifyclass=verifyclass)

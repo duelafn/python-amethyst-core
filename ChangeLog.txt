@@ -2,6 +2,7 @@
 amethyst-core 0.5.1
 
   * INCOMPATIBLE: default amethyst_classhint_style is now "flat"
+  * INCOMPATIBLE: amethyst_strictkeys replaced with more general amethyst_import_strategy
   * Attr `default` values immediately apply at object creation
   * Oblect.set() can now take either positional key/value or kwargs
   * remove pkgutil.extend_path fallback, use only pkg_resources.declare_namespace
