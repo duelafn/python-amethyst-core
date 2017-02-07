@@ -1,0 +1,10 @@
+
+amethyst-core 0.5.1
+
+  * Attr `default` values immediately apply at object creation
+  * Oblect.set() can now take either positional key/value or kwargs
+  * remove pkgutil.extend_path fallback, use only pkg_resources.declare_namespace
+
+amethyst-core 0.5.0 released 2016-12-01
+
+  * Initial release
