@@ -526,7 +526,7 @@ class Object(BaseObject):
     amethyst_includeclass  = True
     amethyst_verifyclass   = True
     amethyst_strictkeys    = True
-    amethyst_classhint_style = "single-key"
+    amethyst_classhint_style = "flat"
 
     def __init__(self, *args, **kwargs):
         """
@@ -808,7 +808,7 @@ class Object(BaseObject):
                     return global_amethyst_hooks[key](obj[key])
         return obj
 
-    def toJSON(self, includeclass=None, style="single-key", **kwargs):
+    def toJSON(self, includeclass=None, style=None, **kwargs):
         """
         Paramters are sent directly to json.dumps except:
 
@@ -819,13 +819,16 @@ class Object(BaseObject):
 
         @param style: When including class, what style to use. Options are:
 
-            * "single-key" (the default) to produce a JSON string in the form:
-
-                { "__my.module.MyClass__": { ... obj.dict ... } }
-
             * "flat" to produce a JSON string in the form:
 
                 { "__class__": "MyClass", ... obj.dict ... }
+
+            * "single-key" to produce a JSON string in the form:
+
+                { "__my.module.MyClass__": { ... obj.dict ... } }
+
+        The default style is taken from the class `amethyst_classhint_style`
+        attribute.
         """
         kwargs.setdefault('default', self.JSONEncoder)
         includeclass = coalesce(includeclass, self.amethyst_includeclass)

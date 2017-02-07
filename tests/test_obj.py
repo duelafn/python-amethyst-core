@@ -21,7 +21,7 @@ class MyTest(unittest.TestCase):
 
         self.assertEqual(len(obj), 0, "Empty length works")
 
-        self.assertEqual(json.loads(obj.toJSON()), {"__amethyst.core.obj.Object__": {}}, "Empty toJSON")
+        self.assertEqual(json.loads(obj.toJSON()), {"__class__": "__amethyst.core.obj.Object__"}, "Empty toJSON")
 
         obj = Object.newFromJSON('{"__amethyst.core.obj.Object__": {}}')
         obj = Object.newFromJSON('{"__class__": "__amethyst.core.obj.Object__"}')

@@ -145,18 +145,17 @@ This can be disabled on a per-call basis as seen above with the
 basis by setting some attributes.
 
 This metadata can be encoded in two different ways depending on what you
-find most convenient for your situation (the "single-key" style is the
-default):
+find most convenient for your situation (the "flat" style is the default):
 
 [source,python]
 ----
 myobj = MyObject(foo=23)
 
-print(myobj.toJSON())     # The default, style="single-key"
-# => {"__mymodule.MyObject__": {"foo": 23}}
-
-print(myobj.toJSON(style="flat"))
+print(myobj.toJSON())     # The default, style="flat"
 # => {"__class__": "__mymodule.MyObject__", "foo": 23}
+
+print(myobj.toJSON(style="single-key"))
+# => {"__mymodule.MyObject__": {"foo": 23}}
 
 print(myobj.toJSON(includeclass=False))
 # => { "foo": 23 }
