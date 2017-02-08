@@ -1,5 +1,5 @@
 
-amethyst-core 0.5.1
+amethyst-core 0.6.0
 
   * INCOMPATIBLE: default amethyst_classhint_style is now "flat"
   * INCOMPATIBLE: amethyst_strictkeys replaced with more general amethyst_import_strategy
