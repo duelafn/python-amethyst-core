@@ -19,8 +19,8 @@ PKG_VERSION = $(shell python -c 'import re; print(re.search("__version__ = \"([\
 
 
 test:
-	python3 -m unittest  discover -s tests
-	python2 -m unittest  discover -s tests
+	python3 setup.py test >/dev/null
+	python2 setup.py test >/dev/null
 
 tox:
 	tox
@@ -37,11 +37,12 @@ sdist: test
 	python3 setup.py sdist
 
 dist: test debbuild
-	mv -f debbuild/${PKGNAME}_* debbuild/*.deb dist/
+	@mkdir -p dist/${PKG_VERSION}
+	mv -f debbuild/${PKGNAME}_* debbuild/*.deb dist/${PKG_VERSION}/
 	rm -rf debbuild
 
 debbuild: test sdist
-	grep "(${PKG_VERSION}-1)" debian/changelog || (echo "** debian/changelog requires update **" && false)
+	@head -n1 debian/changelog | grep "(${PKG_VERSION}-1)" debian/changelog || (/bin/echo -e "\e[1m\e[91m** debian/changelog requires update **\e[0m" && false)
 	rm -rf debbuild
 	mkdir -p debbuild
 	mv -f dist/${PKGNAME}-${PKG_VERSION}.tar.gz debbuild/${PKGNAME}_${PKG_VERSION}.orig.tar.gz

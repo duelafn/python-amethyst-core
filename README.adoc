@@ -8,7 +8,7 @@ amethyst-core
 :License:  CC BY-SA or GNU FDL
 
 
-A sober python base library
+A sober python base library for python 2.7 or python 3.
 
 CAUTION: EXPERIMENTAL CODE. The interface to this library is not net
 stable. At this time, improvements will be made to the interface without
@@ -141,8 +141,8 @@ By default, import and export try to make sure that the object is a
 serialization of the correct type of object. Metadata are automatically,
 injected into the serialization to identify the proper type fo the data.
 This can be disabled on a per-call basis as seen above with the
-`verifyclass` keyword argument, or on a per-class or even per-instance
-basis by setting some attributes.
+`verifyclass` keyword argument, or on a per-class basis by setting some
+attributes.
 
 This metadata can be encoded in two different ways depending on what you
 find most convenient for your situation (the "flat" style is the default):

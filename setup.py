@@ -19,7 +19,13 @@ import re
 
 __version__ = re.search(r'(?m)^__version__\s*=\s*"([\d.]+(?:[\-\+~.]\w+)*)"', open('amethyst/core/__init__.py').read()).group(1)
 
-from distutils.core import setup
+from setuptools import setup
+
+import unittest
+def my_test_suite():
+    test_loader = unittest.TestLoader()
+    test_suite = test_loader.discover('tests', pattern='test_*.py')
+    return test_suite
 
 setup(
     name         = 'amethyst-core',
@@ -31,4 +37,5 @@ setup(
     packages     = [ 'amethyst.core' ],
     requires     = [ "six", ],
     namespace_packages = [ 'amethyst' ],
+    test_suite   = 'setup.my_test_suite',
 )
