@@ -4,7 +4,7 @@
 from __future__ import division, absolute_import, print_function, unicode_literals
 import unittest
 
-from amethyst.core import *
+from amethyst.core import cached_property, coalesce
 
 class Foo(object):
     def __init__(self, bar=None):

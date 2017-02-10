@@ -5,7 +5,7 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 import unittest
 
 import json
-from amethyst.core import *
+from amethyst.core import Object, Attr, ImmutableObjectException
 
 class MyTest(unittest.TestCase):
 

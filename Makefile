@@ -14,6 +14,7 @@
 
 PKGNAME = amethyst-core
 PKG_VERSION = $(shell python -c 'import re; print(re.search("__version__ = \"([\d.]+)\"", open("amethyst/core/__init__.py").read()).group(1))')
+PY_FILES = $(shell find tests amethyst -type f -name "*.py")
 
 .PHONY: all sdist dist debbuild clean test
 
@@ -26,8 +27,8 @@ tox:
 	tox
 
 check:
-	python3 -m flake8 --config=extra/flake8.ini amethyst/core/*.py
-	python2 -m flake8 --config=extra/flake8.ini amethyst/core/*.py
+	python3 -m flake8 --config=extra/flake8.ini ${PY_FILES}
+	python2 -m flake8 --config=extra/flake8.ini ${PY_FILES}
 	@echo OK
 
 zip: test
