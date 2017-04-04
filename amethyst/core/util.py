@@ -18,9 +18,11 @@
 from __future__ import division, absolute_import, print_function, unicode_literals
 __all__ = """
 cached_property
+smartmatch
 coalesce
 """.split()
 
+import re
 
 def coalesce(*args):
     """
@@ -32,6 +34,57 @@ def coalesce(*args):
         if x is not None:
             return x
     return None
+
+
+RE_TYPE = type(re.compile("^$"))
+NONE_TYPE = type(None)
+def smartmatch(val, other):
+    """
+    Smart match against a value
+
+    Convenient function to use in attribute validation. Attempts to
+    determine if a value is like other values. Behavior depends on type of
+    the other object:
+
+    * list, tuple, set, frozenset: Test membership and return the value
+      unmodified.
+
+    * dict: Look up the item and return the hashed value.
+
+    * compiled regex: call other.search(val). Remember to anchor your
+      search if that is desired!
+
+    * callable: call other(val) and return the result
+
+    * type, NoneType: Test `val is other` and, if true, return value
+
+    * anything else: Test `val == other` and, if true, return value
+
+    If none of the above match, raises a ValueError
+    """
+    if isinstance(other, (list, tuple, set, frozenset)):
+        if val in other:
+            return val
+
+    elif isinstance(other, dict):
+        if val in other:
+            return other[val]
+
+    elif isinstance(other, RE_TYPE):
+        if other.search(val):
+            return val
+
+    elif callable(other):
+        return other(val)
+
+    elif isinstance(other, (type, NONE_TYPE)):
+        if val is other:
+            return val
+
+    elif val == other:
+        return val
+
+    raise ValueError("Invalid Value")
 
 
 class cached_property(object):
