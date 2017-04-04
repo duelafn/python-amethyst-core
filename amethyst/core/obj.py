@@ -98,7 +98,8 @@ class Attr(object):
         # Stringify, then strip whitespace
         foo = Attr(str).strip()
 
-        # Accept bytes or str, decoding is possible (only a method on bytes)
+        # Python 3: Accept bytes or str, decoding if possible (only decodes
+        # bytes since decode not a method of str)
         foo = Attr(isa=(bytes, str)).decode("UTF-8")
 
         # Coerce to a list via .split()
@@ -123,11 +124,11 @@ class Attr(object):
         raise a ValueError(). If converter is `None`, values will be passed
         unmodified.
 
-        @param isa: Called after conversion but before verification,
-        ensures that the value is one of the passed types.
-
         @param verify: Attribute verifier. Called after conversion, this
         callable should return a truthy result if the value is acceptable.
+
+        @param isa: Called after conversion but before verification,
+        ensures that the value is one of the passed types.
 
         @param default: Default value applied at object creation time. If
         default is a callable, it will be called to produce the default
