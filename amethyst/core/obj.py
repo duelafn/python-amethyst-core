@@ -66,7 +66,8 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 __all__ = """
 Object
 Attr
-ImmutableObjectException
+AmethystException
+  ImmutableObjectException
 smartmatch
 register_amethyst_type
 """.split()
@@ -78,9 +79,9 @@ import six
 from .util import coalesce
 
 
-class ImmutableObjectException(Exception):
-    def __init__(self, msg):
-        super(ImmutableObjectException, self).__init__(msg)
+class AmethystException(Exception): pass
+class ImmutableObjectException(AmethystException): pass
+
 
 RE_TYPE = type(re.compile("^$"))
 NONE_TYPE = type(None)
