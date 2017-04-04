@@ -25,7 +25,7 @@ check:
 	@echo OK
 
 clean:
-	rm -rf build dist debbuild .tox
+	rm -rf build dist debbuild .tox amethyst_core.egg-info
 	rm -f MANIFEST
 	pyclean .
 
