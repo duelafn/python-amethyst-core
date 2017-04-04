@@ -9,7 +9,7 @@ Standards-Version: 3.9.1
 
 Package: python-amethyst-core
 Architecture: all
-Depends: ${misc:Depends}, ${python3:Depends}, ${shlibs:Depends}, python-six
+Depends: ${misc:Depends}, ${python:Depends}, ${shlibs:Depends}, python-six
 Description: A sober python base library (Python 2)
  Provides a base object class which can serializes itself to JSON and
  includes additional utility functions.
