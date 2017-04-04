@@ -14,33 +14,20 @@
 
 PKGNAME = amethyst-core
 PKG_VERSION = $(shell python -c 'import re; print(re.search("__version__ = \"([\d.]+)\"", open("amethyst/core/__init__.py").read()).group(1))')
-PY_FILES = $(shell find tests amethyst -type f -name "*.py")
+PY_PATHS = tests amethyst
 
 .PHONY: all sdist dist debbuild clean test
 
 
-test:
-	python3 setup.py test >/dev/null
-	python2 setup.py test >/dev/null
-
-tox:
-	tox
-
 check:
-	python3 -m flake8 --config=extra/flake8.ini ${PY_FILES}
-	python2 -m flake8 --config=extra/flake8.ini ${PY_FILES}
+	python3 -m flake8 --config=extra/flake8.ini ${PY_PATHS}
+	python2 -m flake8 --config=extra/flake8.ini ${PY_PATHS}
 	@echo OK
 
-zip: test
-	python3 setup.py sdist --format=zip
-
-sdist: test
-	python3 setup.py sdist
-
-dist: test debbuild
-	@mkdir -p dist/${PKG_VERSION}
-	mv -f debbuild/${PKGNAME}_* debbuild/*.deb dist/${PKG_VERSION}/
-	rm -rf debbuild
+clean:
+	rm -rf build dist debbuild .tox
+	rm -f MANIFEST
+	pyclean .
 
 debbuild: test sdist
 	@head -n1 debian/changelog | grep "(${PKG_VERSION}-1)" debian/changelog || (/bin/echo -e "\e[1m\e[91m** debian/changelog requires update **\e[0m" && false)
@@ -51,7 +38,20 @@ debbuild: test sdist
 	cp -r debian debbuild/${PKGNAME}-${PKG_VERSION}/
 	cd debbuild/${PKGNAME}-${PKG_VERSION} && dpkg-buildpackage -rfakeroot -uc -us
 
-clean:
-	rm -rf build dist debbuild .tox
-	rm -f MANIFEST
-	pyclean .
+dist: test debbuild
+	@mkdir -p dist/${PKG_VERSION}
+	mv -f debbuild/${PKGNAME}_* debbuild/*.deb dist/${PKG_VERSION}/
+	rm -rf debbuild
+
+sdist: test
+	python3 setup.py sdist
+
+test:
+	python3 setup.py test >/dev/null
+	python2 setup.py test >/dev/null
+
+tox:
+	tox
+
+zip: test
+	python3 setup.py sdist --format=zip
