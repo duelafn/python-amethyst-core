@@ -36,7 +36,7 @@ class MyObject(Object):
     foo = Attr(int)
     bar = Attr(isa=str).strip()
 
-myobj = MyObject(foo=23)
+myobj = MyObject( dict(foo=23) )
 print(myobj.foo)      # => 23
 ----
 
