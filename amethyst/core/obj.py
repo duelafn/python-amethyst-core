@@ -67,6 +67,7 @@ __all__ = """
 Object
 Attr
 AmethystException
+  DuplicateAttributeException
   ImmutableObjectException
 register_amethyst_type
 """.split()
@@ -79,6 +80,7 @@ from .util import coalesce, smartmatch
 
 class AmethystException(Exception): pass
 class ImmutableObjectException(AmethystException): pass
+class DuplicateAttributeException(AmethystException): pass
 
 
 class Attr(object):
@@ -433,7 +435,7 @@ class AttrsMetaclass(type):
 
         for name, attr in six.iteritems(new_attrs):
             if hasattr(new_cls, name):
-                raise Exception("Attribute {} in {} already defined in a parent class.".format(name, cls.__name__))
+                raise DuplicateAttributeException("Attribute {} in {} already defined in a parent class.".format(name, cls.__name__))
             setattr(new_cls, name, attr.build_property(name))
 
         new_cls._attrs = new_cls._attrs.copy()
@@ -804,7 +806,7 @@ class Object(BaseObject):
                 elif style == "single-key":
                     dump = { self._dundername: self.dict }
                 else:
-                    raise Exception("Unknown class style '{}'".format(style))
+                    raise AmethystException("Unknown class style '{}'".format(style))
             rv = json.dumps(dump, **kwargs)
         finally:
             if popclass:

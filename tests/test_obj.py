@@ -5,7 +5,8 @@ from __future__ import division, absolute_import, print_function, unicode_litera
 import unittest
 
 import json
-from amethyst.core import Object, Attr, ImmutableObjectException
+from amethyst.core import Object, Attr
+from amethyst.core import ImmutableObjectException, DuplicateAttributeException
 
 class MyTest(unittest.TestCase):
 
@@ -80,7 +81,7 @@ class MyTest(unittest.TestCase):
         with self.assertRaises(AttributeError, msg="Subclasses don't change parent attributes"):
             obj.foo
 
-        with self.assertRaises(Exception, msg="Duplicate attribute raises exception"):
+        with self.assertRaises(DuplicateAttributeException, msg="Duplicate attribute raises exception"):
             class Obj2(Obj):
                 foo = Attr(int)
 
