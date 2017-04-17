@@ -622,7 +622,7 @@ class Object(BaseObject):
             elif attr.default is not None:
                 data[name] = attr.get_default()
         if keys:
-            raise ValueError("keys {} not permitted in {} object".format(keys, self._dundernam))
+            raise ValueError("keys {} not permitted in {} object".format(keys, self._dundername))
         return data
 
     def validate_update(self, d, import_strategy=None):
