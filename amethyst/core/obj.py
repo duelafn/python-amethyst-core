@@ -194,15 +194,15 @@ class Attr(object):
         else:
             return self.default
 
-    def __call__(self, value):
+    def __call__(self, value, key=None):
         if self.convert:
             value = self.convert(value)
         if self.isa:
             if not isinstance(value, self.isa):
-                raise ValueError("Value is not an instance of an expected type")
+                raise ValueError("Value of '{}' is not an instance of {}".format(key, str(self.isa)))
         if self.verify:
             if not self.verify(value):
-                raise ValueError("Value does not satisfy verification callback")
+                raise ValueError("Value of '{}' does not satisfy verification callback".format(key))
         return value
 
     def __and__(self, other):
@@ -393,9 +393,9 @@ def register_amethyst_type(cls, encode, decode, name=None, overwrite=False):
         else:
             name = "__{}.{}__".format(cls.__module__, cls.__name__)
     if cls in global_amethyst_encoders and not overwrite:
-        raise ValueError("Class encoder already reqistered")
+        raise ValueError("Class encoder '{}' already reqistered".format(cls))
     if name in global_amethyst_hooks and not overwrite:
-        raise ValueError("Class hook already reqistered")
+        raise ValueError("Class hook '{}' already reqistered".format(name))
     global_amethyst_encoders[cls] = lambda obj: { name: encode(obj) }
     global_amethyst_hooks[name]   = decode
 
@@ -622,7 +622,7 @@ class Object(BaseObject):
         for name, attr in six.iteritems(self._attrs):
             keys.discard(name)
             if name in d:
-                data[name] = attr(d[name])
+                data[name] = attr(d[name], name)
             elif attr.default is not None:
                 data[name] = attr.get_default()
         if keys:
@@ -645,7 +645,7 @@ class Object(BaseObject):
             if attr is None and strategy == "strict":
                 raise ValueError("key {} not permitted in {} object".format(key, self._dundername))
             elif attr is not None:
-                data[key] = attr(val)
+                data[key] = attr(val, key)
         return data
 
     def attr_value_ok(self, name, value):
@@ -655,7 +655,7 @@ class Object(BaseObject):
         """
         if name in self._attrs:
             try:
-                self._attrs[name](value)
+                self._attrs[name](value, name)
                 return True
             except ValueError:
                 return False
