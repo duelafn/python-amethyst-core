@@ -166,6 +166,7 @@ class Attr(object):
 
     def build_property(self, name):
         if self.fget is None and self.fset is None and self.fdel is None:
+
             def fget(obj):
                 try:
                     return obj.dict[name]
@@ -178,13 +179,17 @@ class Attr(object):
                         obj.dict[name] = self.builder()
                         return obj.dict[name]
                 return None
+
             def fset(obj, value):
                 obj.assert_mutable()
                 obj.dict[name] = value
+
             def fdel(obj):
                 obj.assert_mutable()
                 del obj.dict[name]
+
             return property(fget, fset, fdel, self.doc)
+
         else:
             return property(self.fget, self.fset, self.fdel, self.doc)
 
@@ -399,6 +404,7 @@ def register_amethyst_type(cls, encode, decode, name=None, overwrite=False):
     global_amethyst_encoders[cls] = lambda obj: { name: encode(obj) }
     global_amethyst_hooks[name]   = decode
 
+
 # Python3 moved the builtin modules around, force the name so py3 can talk to py2
 register_amethyst_type(set, list, set, name="__set__")
 register_amethyst_type(frozenset, list, frozenset, name="__frozenset__")
@@ -447,7 +453,6 @@ class AttrsMetaclass(type):
         new_cls._dundername = "__{}.{}__".format(new_cls.__module__, new_cls.__name__)
 
         return new_cls
-
 
 
 # Manually create a base object so that we can run in both python 2 and 3.
@@ -541,12 +546,17 @@ class Object(BaseObject):
         self._mutable_ = False
         return self
 
-    def __str__(self):           return str(self.dict)
-    def __repr__(self):          return repr(self.dict)
+    def __str__(self):
+        return str(self.dict)
+    def __repr__(self):
+        return repr(self.dict)
 
-    def __len__(self):           return len(self.dict)
-    def __contains__(self, key): return key in self.dict
-    def __iter__(self):          return iter(self.dict)
+    def __len__(self):
+        return len(self.dict)
+    def __contains__(self, key):
+        return key in self.dict
+    def __iter__(self):
+        return iter(self.dict)
 
     def __getitem__(self, key):
         return self.dict[key]

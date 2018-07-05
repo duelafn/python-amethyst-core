@@ -6,6 +6,7 @@
 .installed.cfg
 .tox
 /MANIFEST
+/debbuild
 /pydoc
 __pycache__
 build

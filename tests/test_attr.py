@@ -6,6 +6,10 @@ import unittest
 
 import six
 
+import os.path
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)) + '/../')
+
 from amethyst.core import Object, Attr
 
 class Exception_Eager(Exception): pass
@@ -34,6 +38,7 @@ class MyTest(unittest.TestCase):
 
     def test_Attr_unit(self):
         counter = Counter()
+
         def boom_eager():
             raise Exception_Eager("boom!")
 

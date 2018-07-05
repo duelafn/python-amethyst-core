@@ -18,5 +18,5 @@ A sober python base library
 
 __version__ = "0.6.0"
 
-from .util import *   # noqa: F403
-from .obj  import *   # noqa: F403
+from .util import *   # noqa: F403, F401
+from .obj  import *   # noqa: F403, F401

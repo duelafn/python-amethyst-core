@@ -2,21 +2,23 @@ Source: amethyst-core
 Maintainer: Dean Serenevy <dean@serenevy.net>
 Section: python
 Priority: optional
-Build-Depends: debhelper (>= 8), dh-python, python-all, python-setuptools, python3-all, python3-setuptools
+Build-Depends: debhelper (>= 10), dh-python,
+ python-all, python-setuptools, python-six, python-pytest,
+ python3-all, python3-setuptools, python3-six, python3-pytest
 X-Python-Version: >= 2.6
 X-Python3-Version: >= 3.2
-Standards-Version: 3.9.1
+Standards-Version: 4.1.4
 
 Package: python-amethyst-core
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, ${shlibs:Depends}, python-six
+Depends: ${misc:Depends}, ${python:Depends}, python-six
 Description: A sober python base library (Python 2)
  Provides a base object class which can serializes itself to JSON and
  includes additional utility functions.
 
 Package: python3-amethyst-core
 Architecture: all
-Depends: ${misc:Depends}, ${python3:Depends}, ${shlibs:Depends}, python3-six
+Depends: ${misc:Depends}, ${python3:Depends}, python3-six
 Description: A sober python base library (Python 3)
  Provides a base object class which can serializes itself to JSON and
  includes additional utility functions.

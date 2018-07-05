@@ -120,5 +120,6 @@ class MyTest(unittest.TestCase):
         self.assertFalse(a.bar is b.bar, "default list constructor initializes different objects")
         self.assertTrue(a.baz is b.baz, "default list initializes identical object")
 
+
 if __name__ == '__main__':
     unittest.main()
