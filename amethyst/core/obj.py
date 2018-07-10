@@ -391,7 +391,7 @@ class Attr(object):
 
 global_amethyst_encoders = dict()
 global_amethyst_hooks = dict()
-def register_amethyst_type(cls, encode, decode, name=None, overwrite=False):
+def register_amethyst_type(cls, encode, decode, name=None, overwrite=False, wrap_encode=True):
     if name is None:
         if isinstance(cls, BaseObject):
             name = cls._dundername
@@ -401,7 +401,7 @@ def register_amethyst_type(cls, encode, decode, name=None, overwrite=False):
         raise ValueError("Class encoder '{}' already reqistered".format(cls))
     if name in global_amethyst_hooks and not overwrite:
         raise ValueError("Class hook '{}' already reqistered".format(name))
-    global_amethyst_encoders[cls] = lambda obj: { name: encode(obj) }
+    global_amethyst_encoders[cls] = lambda obj: { name: encode(obj) } if wrap_encode else encode
     global_amethyst_hooks[name]   = decode
 
 
