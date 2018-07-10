@@ -1,4 +1,9 @@
 
+amethyst-core 0.6.1
+
+  * Use Attr(OVERRIDE=True) to avoid DuplicateAttributeException
+  * Add class/attribute name to various error messages to aid in debugging
+
 amethyst-core 0.6.0 released 2017-04-24
 
   * INCOMPATIBLE: default amethyst_classhint_style is now "flat"
