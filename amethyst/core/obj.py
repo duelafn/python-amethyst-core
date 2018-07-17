@@ -70,9 +70,12 @@ AmethystException
   DuplicateAttributeException
   ImmutableObjectException
 register_amethyst_type
+amethyst_deflate
+amethyst_inflate
 """.split()
 
 import json
+import numbers
 import six
 
 from .util import coalesce, smartmatch
@@ -415,8 +418,77 @@ def register_amethyst_type(cls, encode, decode, name=None, overwrite=False, wrap
         raise ValueError("Class encoder '{}' already reqistered".format(cls))
     if name in global_amethyst_hooks and not overwrite:
         raise ValueError("Class hook '{}' already reqistered".format(name))
-    global_amethyst_encoders[cls] = lambda obj: { name: encode(obj) } if wrap_encode else encode
-    global_amethyst_hooks[name]   = decode
+    if wrap_encode:
+        global_amethyst_encoders[cls] = lambda obj: { name: encode(obj) }
+    else:
+        global_amethyst_encoders[cls] = encode
+    global_amethyst_hooks[name] = decode
+
+
+def amethyst_deflate(obj, deflator=None):
+    """
+    Deflate a structure of amethyst-encodable objects into a "dumb"
+    structure of plain dicts, lists, numbers, and strings. The deflated
+    structure should be easily serializable by most any reasonable
+    serialization library (yaml, lxml, ...)
+
+    Makes use of `global_amethyst_encoders` by default. Pass an amethyst
+    Object as second argument to make use of any Object-local encoders.
+
+    Note: If your target is JSON, the amethyst object's toJSON() method is
+    probably better.
+    """
+    global global_amethyst_encoders
+
+    if isinstance(obj, (six.string_types, six.binary_type, numbers.Number, True, False, None)):
+        return obj
+    elif isinstance(obj, dict):
+        return { six.text_type(k): amethyst_deflate(obj[k], deflator) for k in obj }
+    elif isinstance(obj, list):
+        return [ amethyst_deflate(k, deflator) for k in obj ]
+    elif isinstance(obj, tuple):
+        return tuple(amethyst_deflate(k, deflator) for k in obj)
+    elif hasattr(deflator, "_jsonencoders") and obj.__class__ in deflator._jsonencoders:
+        return deflator._jsonencoders[obj.__class__](obj)
+    elif obj.__class__ in global_amethyst_encoders:
+        return global_amethyst_encoders[obj.__class__](obj)
+    raise TypeError("Can't encode {}".format(repr(obj)))
+
+
+def amethyst_inflate(obj, inflator=None, maxdepth=None):
+    """
+    Inflate a "dumb" structure to a structure of objects, the opposite of
+    `amethyst_deflate()`. Allows inflation from arbitrary serialization
+    tools, as long as they can produce dicts and lists.
+
+    Makes use of `global_amethyst_encoders` by default. Pass an amethyst
+    Object as second argument to make use of any Object-local encoders.
+
+    Note: If your source is JSON, the amethyst object's `fromJSON()` or
+    class `newFromJSON()` method is probably better.
+    """
+    global global_amethyst_hooks
+    if maxdepth is not None:
+        if maxdepth < 0:
+            return obj
+        maxdepth -= 1
+
+    if isinstance(obj, dict):
+        if 1 == len(obj):
+            for key in obj:
+                if hasattr(inflator, "_jsonhooks") and key in inflator._jsonhooks:
+                    return inflator._jsonhooks[key](obj[key])
+                elif key in global_amethyst_hooks:
+                    return global_amethyst_hooks[key](obj[key])
+        elif maxdepth is None or maxdepth >= 0:
+            for key in obj:
+                obj[key] = amethyst_inflate(obj[key], inflator, maxdepth=maxdepth)
+
+    elif isinstance(obj, list) and maxdepth is None or maxdepth >= 0:
+        for i, val in enumerate(obj):
+            obj[i] = amethyst_inflate(val, inflator, maxdepth=maxdepth)
+
+    return obj
 
 
 # Python3 moved the builtin modules around, force the name so py3 can talk to py2
@@ -807,7 +879,8 @@ class Object(BaseObject):
           default), defer to the value of the class variable
           `amethyst_includeclass`.
 
-        @param style: When including class, what style to use. Options are:
+        @param style: When including class, what style to use (root-level
+        object only). Options are:
 
             * "flat" to produce a JSON string in the form:
 
@@ -852,7 +925,7 @@ class Object(BaseObject):
 
     def fromJSON(self, source, import_strategy=None, verifyclass=None, **kwargs):
         """
-        Paramters are sent directly to json.loads except:
+        Paramters are sent directly to json.load or json.loads except:
 
         @param import_strategy: Provides a local override to the `amethyst_import_strategy` class attribute.
         @param verifyclass: Provides a local override to the `amethyst_verifyclass` class attribute.
@@ -863,3 +936,26 @@ class Object(BaseObject):
         else:
             data = json.load(source, **kwargs)
         return self.load_data(data, import_strategy=import_strategy, verifyclass=verifyclass)
+
+    def deflate_data(self):
+        """
+        Deflate object into a "dumb" structure of plain dicts, lists,
+        numbers, and strings. The deflated structure should be easily
+        serializable by most any reasonable serialization library (yaml,
+        lxml, ...)
+        """
+        return amethyst_deflate(self.dict, self)
+
+    def inflate_data(self, obj):
+        """
+        Inflate a "dumb" structure to a structure of objects, the opposite
+        of `deflate_data()`. Allows inflation from arbitrary serialization
+        tools, as long as they can produce dicts and lists.
+
+        Note that this method does not import the resulting structure into
+        the object. After inflation, create a new Object by passing the
+        inflated structure to a constructor or else call `.load_data()` or
+        call `.validate_update()` followed by `.update()` to replace or
+        update the values in an existing object.
+        """
+        return amethyst_inflate(obj, self)
