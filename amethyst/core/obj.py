@@ -211,9 +211,17 @@ class Attr(object):
         return value
 
     def __and__(self, other):
-        return Attr(lambda v: other(self(v)), OVERRIDE=(self.OVERRIDE or getattr(other, "OVERRIDE", False)))
+        return Attr(
+            lambda v: other(self(v)),
+            OVERRIDE=(self.OVERRIDE or getattr(other, "OVERRIDE", False)),
+            doc=(self.doc or getattr(other, "doc", None)),
+        )
     def __rand__(self, other):
-        return Attr(lambda v: self(other(v)), OVERRIDE=(self.OVERRIDE or getattr(other, "OVERRIDE", False)))
+        return Attr(
+            lambda v: self(other(v)),
+            OVERRIDE=(self.OVERRIDE or getattr(other, "OVERRIDE", False)),
+            doc=(self.doc or getattr(other, "doc", None)),
+        )
 
     def __or__(self, other):
         def convert(value):
@@ -226,7 +234,10 @@ class Attr(object):
                     return other
                 else:
                     raise err
-        return Attr(convert, OVERRIDE=(self.OVERRIDE or getattr(other, "OVERRIDE", False)))
+        return Attr(convert,
+            OVERRIDE=(self.OVERRIDE or getattr(other, "OVERRIDE", False)),
+            doc=(self.doc or getattr(other, "doc", None)),
+        )
     def __ror__(self, other):
         def convert(value):
             try:
@@ -238,7 +249,10 @@ class Attr(object):
                     raise ValueError("Invalid value")
             except ValueError:
                 return self(value)
-        return Attr(convert, OVERRIDE=(self.OVERRIDE or getattr(other, "OVERRIDE", False)))
+        return Attr(convert,
+            OVERRIDE=(self.OVERRIDE or getattr(other, "OVERRIDE", False)),
+            doc=(self.doc or getattr(other, "doc", None)),
+        )
 
     def __eq__(self, other):
         """
@@ -252,7 +266,7 @@ class Attr(object):
 
         BAD:   `{ "a": "A", "b": "B" }`  # will fail on repeated validation since "A" and "B" are not keys
         """
-        return Attr(lambda v: smartmatch(self(v), other), OVERRIDE=self.OVERRIDE)
+        return Attr(lambda v: smartmatch(self(v), other), OVERRIDE=self.OVERRIDE, doc=self.doc)
     def __ne__(self, other):
         """Ensure no smartmatch"""
         def convert(value):
@@ -266,7 +280,7 @@ class Attr(object):
             # otherwise, we've matched the smartmatch, this we match what
             # we don't want to be - raise a value error.
             raise ValueError("Invalid Value")
-        return Attr(convert, OVERRIDE=self.OVERRIDE)
+        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
 
     # This is starting to get cute:
     def __lt__(self, other):
@@ -274,35 +288,35 @@ class Attr(object):
             val = self(value)
             if val < other: return val
             raise ValueError("Invalid Value")
-        return Attr(convert, OVERRIDE=self.OVERRIDE)
+        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
     def __le__(self, other):
         def convert(value):
             val = self(value)
             if val <= other: return val
             raise ValueError("Invalid Value")
-        return Attr(convert, OVERRIDE=self.OVERRIDE)
+        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
     def __ge__(self, other):
         def convert(value):
             val = self(value)
             if val >= other: return val
             raise ValueError("Invalid Value")
-        return Attr(convert, OVERRIDE=self.OVERRIDE)
+        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
     def __gt__(self, other):
         def convert(value):
             val = self(value)
             if val > other: return val
             raise ValueError("Invalid Value")
-        return Attr(convert, OVERRIDE=self.OVERRIDE)
+        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
 
     # These modifiers make no sense unless they are idempotent since we may
     # validate multiple times. Thus, we only define those whose semantics
     # swing that way.
     def __mod__(self, other):
-        return Attr(lambda v: self(v) % other, OVERRIDE=self.OVERRIDE)
+        return Attr(lambda v: self(v) % other, OVERRIDE=self.OVERRIDE, doc=self.doc)
     def __pos__(self):
-        return Attr(lambda v: +self(v), OVERRIDE=self.OVERRIDE)
+        return Attr(lambda v: +self(v), OVERRIDE=self.OVERRIDE, doc=self.doc)
     def __abs__(self):
-        return Attr(lambda v: abs(self(v)), OVERRIDE=self.OVERRIDE)
+        return Attr(lambda v: abs(self(v)), OVERRIDE=self.OVERRIDE, doc=self.doc)
 
     # I don't see much use for float() since it is the first thing you
     # would want to do. However, int() could be useful since
@@ -310,11 +324,11 @@ class Attr(object):
     # floats rather than raising an exception). Just for completeness, we
     # include complex too.
     def float(self):
-        return Attr(lambda v: float(self(v)), OVERRIDE=self.OVERRIDE)
+        return Attr(lambda v: float(self(v)), OVERRIDE=self.OVERRIDE, doc=self.doc)
     def int(self):
-        return Attr(lambda v: int(self(v)), OVERRIDE=self.OVERRIDE)
+        return Attr(lambda v: int(self(v)), OVERRIDE=self.OVERRIDE, doc=self.doc)
     def complex(self):
-        return Attr(lambda v: complex(self(v)), OVERRIDE=self.OVERRIDE)
+        return Attr(lambda v: complex(self(v)), OVERRIDE=self.OVERRIDE, doc=self.doc)
 
     # Can also define a handful of common methods one might wish to call,
     # and call them if present. Happy duck-typing.
@@ -323,70 +337,70 @@ class Attr(object):
         def convert(value):
             value = self(value)
             return value.strip(chars) if hasattr(value, "strip") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE)
+        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
     def rstrip(self, chars=None):
         """Return a new attribute which strips whitespace from the right side if applicable (duck typing)."""
         def convert(value):
             value = self(value)
             return value.rstrip(chars) if hasattr(value, "rstrip") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE)
+        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
     def lstrip(self, chars=None):
         """Return a new attribute which strips whitespace from the left side if applicable (duck typing)."""
         def convert(value):
             value = self(value)
             return value.lstrip(chars) if hasattr(value, "lstrip") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE)
+        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
 
     def encode(self, encoding="UTF-8", errors="strict"):
         """Return a new attribute which encodes value if applicable (duck typing). Defaults to UTF-8 encoding."""
         def convert(value):
             value = self(value)
             return value.encode(encoding, errors) if hasattr(value, "encode") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE)
+        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
     def decode(self, encoding="UTF-8", errors="strict"):
         """Return a new attribute which decodes value if applicable (duck typing). Defaults to UTF-8 encoding."""
         def convert(value):
             value = self(value)
             return value.decode(encoding, errors) if hasattr(value, "decode") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE)
+        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
 
     def lower(self):
         """Return a new attribute which lower-cases value if applicable (duck typing)."""
         def convert(value):
             value = self(value)
             return value.lower() if hasattr(value, "lower") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE)
+        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
     def upper(self):
         """Return a new attribute which upper-cases value if applicable (duck typing)."""
         def convert(value):
             value = self(value)
             return value.upper() if hasattr(value, "upper") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE)
+        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
     def title(self):
         """Return a new attribute which title-cases value if applicable (duck typing)."""
         def convert(value):
             value = self(value)
             return value.title() if hasattr(value, "title") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE)
+        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
     def capitalize(self):
         """Return a new attribute which capitalizes value if applicable (duck typing)."""
         def convert(value):
             value = self(value)
             return value.capitalize() if hasattr(value, "capitalize") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE)
+        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
     def casefold(self):
         """Return a new attribute which casefolds value if applicable (duck typing)."""
         def convert(value):
             value = self(value)
             return value.casefold() if hasattr(value, "casefold") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE)
+        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
 
     def split(self, sep=None, maxsplit=-1):
         """Return a new attribute which splits its value if applicable (duck typing)."""
         def convert(value):
             value = self(value)
             return value.split(sep, maxsplit) if hasattr(value, "split") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE)
+        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
 
 
 global_amethyst_encoders = dict()
