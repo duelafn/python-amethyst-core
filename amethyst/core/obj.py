@@ -842,15 +842,15 @@ class Object(BaseObject):
         return rv
 
     @classmethod
-    def newFromJSON(cls, data, import_strategy=None, verifyclass=None, **kwargs):
+    def newFromJSON(cls, source, import_strategy=None, verifyclass=None, **kwargs):
         self = cls()
         mutable = self.is_mutable()# In case some subclass is default immutable
         if not mutable: self.make_mutable()
-        self.fromJSON(data, import_strategy=import_strategy, verifyclass=verifyclass, **kwargs)
+        self.fromJSON(source, import_strategy=import_strategy, verifyclass=verifyclass, **kwargs)
         if not mutable: self.make_immutable()
         return self
 
-    def fromJSON(self, data, import_strategy=None, verifyclass=None, **kwargs):
+    def fromJSON(self, source, import_strategy=None, verifyclass=None, **kwargs):
         """
         Paramters are sent directly to json.loads except:
 
@@ -858,4 +858,8 @@ class Object(BaseObject):
         @param verifyclass: Provides a local override to the `amethyst_verifyclass` class attribute.
         """
         kwargs.setdefault('object_hook', self.JSONObjectHook)
-        return self.load_data(json.loads(data, **kwargs), import_strategy=import_strategy, verifyclass=verifyclass)
+        if isinstance(source, six.string_types):
+            data = json.loads(source, **kwargs)
+        else:
+            data = json.load(source, **kwargs)
+        return self.load_data(data, import_strategy=import_strategy, verifyclass=verifyclass)
