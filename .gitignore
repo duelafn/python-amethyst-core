@@ -1,3 +1,7 @@
+
+/_doc
+/doc/stubs
+
 # Python Ignores
 *.egg
 *.egg-info

@@ -26,9 +26,8 @@ import re
 
 def coalesce(*args):
     """
-    Short-circuiting coalesce function. Returns first argument which is not
-    `None`. If no non-None argumenst, then will return `None`. Also returns
-    `None` if argument list is empty.
+    Returns first argument which is not `None`. If no non-None argumenst,
+    then will return `None`. Also returns `None` if argument list is empty.
     """
     for x in args:
         if x is not None:
@@ -46,21 +45,21 @@ def smartmatch(val, other):
     determine if a value is like other values. Behavior depends on type of
     the other object:
 
-    * list, tuple, set, frozenset: Test membership and return the value
+    * `list`, `tuple`, `set`, `frozenset`: Test membership and return the value
       unmodified.
 
-    * dict: Look up the item and return the hashed value.
+    * `dict`: Look up the item and return the hashed value.
 
-    * compiled regex: call other.search(val). Remember to anchor your
+    * compiled `regex`: call ``other.search(val)``. Remember to anchor your
       search if that is desired!
 
-    * callable: call other(val) and return the result
+    * `callable`: call ``other(val)`` and return the result
 
-    * type, NoneType: Test `val is other` and, if true, return value
+    * `type`, `NoneType`: Test ``val is other`` and, if true, return value
 
-    * anything else: Test `val == other` and, if true, return value
+    * anything else: Test ``val == other`` and, if true, return value
 
-    If none of the above match, raises a ValueError
+    If none of the above match, raises a :py:exc:`ValueError`
     """
     if isinstance(other, (list, tuple, set, frozenset)):
         if val in other:
@@ -97,7 +96,7 @@ class cached_property(object):
     just-in-time construction (I like using this for subwidget construction
     in GUI classes, see example below).
 
-    Decorator Usage (most common):
+    Decorator Usage (most common)::
 
         class Foo(object):
             @cached_property
@@ -117,7 +116,7 @@ class cached_property(object):
         print(foo.bar)      # Computing...  42
 
     Direct use allows calculation to be closure or dynamically chosen.
-    The bar attribute will behave the same as above:
+    The bar attribute will behave the same as above::
 
         class Foo(object):
             def __init__(self, **kwargs):
@@ -127,7 +126,7 @@ class cached_property(object):
                 self.bar = cached_property(expensive_calculation, "bar")
 
 
-    Example GUI use:
+    Example GUI use::
 
         import wx
         from amethyst.core import cached_property as widget

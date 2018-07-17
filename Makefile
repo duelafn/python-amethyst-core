@@ -16,7 +16,7 @@ PKGNAME = amethyst-core
 PKG_VERSION = $(shell python -c 'import re; print(re.search("__version__ = \"([\d.]+)\"", open("amethyst/core/__init__.py").read()).group(1))')
 PY_PATHS = tests amethyst
 
-.PHONY: all sdist dist debbuild clean test
+.PHONY: all sdist dist debbuild clean test doc
 
 
 check:
@@ -25,7 +25,7 @@ check:
 	@echo OK
 
 clean:
-	rm -rf build dist debbuild .tox amethyst_core.egg-info
+	rm -rf build dist debbuild _doc .tox amethyst_core.egg-info
 	rm -f MANIFEST
 	pyclean .
 
@@ -42,6 +42,9 @@ dist: test debbuild
 	@mkdir -p dist/${PKG_VERSION}
 	mv -f debbuild/${PKGNAME}_* debbuild/*.deb dist/${PKG_VERSION}/
 	rm -rf debbuild
+
+doc:
+	sphinx-build -q -n -E -b singlehtml doc _doc/html
 
 sdist: test
 	python3 setup.py sdist

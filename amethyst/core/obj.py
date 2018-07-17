@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
 """
+***************************
 Generic serializable object
+***************************
 
 SYNOPSIS
+========
+
+::
 
     from amethyst.core import Object, Attr
 
@@ -34,19 +39,21 @@ SYNOPSIS
 
 
 DESCRIPTION
+===========
 
 Implements the dictionary interface and stores everything in self.dict.
 
-Subclasses can define Attr()s which will have properties defined as
+Subclasses can define :py:class:`Attr`s which will have properties defined as
 shortcuts to read and write keys in the dictionary.
 
 By storing all attributes in a dict, we can be trivially serialized.
 toJSON() and fromJSON() methods exist to help with this, and should be used
 for all JSON serialization since they will correctly handle `set()` and
-other values (see the `JSONEncoder` and `JSONObjectHook` methods).
-Additionally, the JSON methods will perform automatic validation based on
-type information passed to the Attr() objects and will ensure that it is
-loading data for the correct class and that no unexpected keys are present.
+other values (see the :py:func:`Object.JSONEncoder` and
+:py:func:`Object.JSONObjectHook` methods). Additionally, the JSON methods
+will perform automatic validation based on type information passed to the
+:py:class:`Attr` objects and will ensure that it is loading data for the
+correct class and that no unexpected keys are present.
 """
 # Copyright (C) 2016  Dean Serenevy
 #
@@ -88,17 +95,17 @@ class DuplicateAttributeException(AmethystException): pass
 
 class Attr(object):
     """
-    Base class for Amethyst Object Attributes.
+    Base class for Amethyst Object Attributes
 
     Attribute descriptions primarily consist of a function which takes in a
     value and either returns a (possibly modified) value or else raises a
-    ValueError. Python's standard object constructors generally work well,
-    though beware that `str` will generally accept anything.
+    :py:exc:`ValueError`. Python's standard object constructors generally work well,
+    though beware that `str` will generally accept anything. ::
 
         foo = Attr(int)                   # Coerce to int (strict parsing)
         foo = Attr(float).int()           # Parse via float, but then integerize
         foo = 0 < Attr(int)               # Positive integer
-        foo = (0 <= Attr(int)) <= 200     # Parens are necessary!
+        foo = (0 <= Attr(int)) <= 200     # Alas, parens are necessary!
 
         # Stringify, then strip whitespace
         foo = Attr(str).strip()
@@ -110,7 +117,7 @@ class Attr(object):
         # Coerce to a list via .split()
         foo = Attr(isa=(list, str)).split()
 
-    Anything based off of Amethyst's `Object` class generally will work as well:
+    Anything based off of Amethyst's :py:class:`Object` class generally will work as well::
 
         class MyClass(amethyst.core.Object):
             ...
@@ -121,36 +128,36 @@ class Attr(object):
     """
     def __init__(self, convert=None, verify=None, isa=None, default=None, builder=None, fget=None, fset=None, fdel=None, doc=None, OVERRIDE=False):
         """
-        Base attribute descriptor
+        :param convert: Attribute converter. At this time, only callables
+           are supported. Callable should accept a single argument, the
+           value, and should return a canonicalized value. Invalid values
+           should raise a ValueError(). If converter is `None`, values will
+           be passed unmodified.
 
-        @param convert: Attribute converter. At this time, only callables
-        are supported. Callable should accept a single argument, the value,
-        and should return a canonicalized value. Invalid values should
-        raise a ValueError(). If converter is `None`, values will be passed
-        unmodified.
+        :param verify: Attribute verifier. Called after conversion, this
+           callable should return a truthy result if the value is acceptable.
 
-        @param verify: Attribute verifier. Called after conversion, this
-        callable should return a truthy result if the value is acceptable.
+        :param isa: Called after conversion but before verification,
+           ensures that the value is one of the passed types.
 
-        @param isa: Called after conversion but before verification,
-        ensures that the value is one of the passed types.
+        :param default: Default value applied at object creation time. If
+           default is a callable, it will be called to produce the default
+           (e.g., `list`).
 
-        @param default: Default value applied at object creation time. If
-        default is a callable, it will be called to produce the default
-        (e.g., `list`).
+        :param builder: Callable which will lazily build a default value
+           when the attribute is first used.
 
-        @param builder: Callable which will lazily build a default value
-        when the attribute is first used.
+        :param fget:
+        :param fset:
+        :param fdel: If any of fget, fset, or fdel are defined, they will
+           be used to construct the object property. If all three are none
+           (the default), then the functions which get/set/del the
+           appropriate key in the object dictionary will be defined.
 
-        @param fget, fset, fdel: If any of these functions are defined,
-        they will be used to construct the object property. If all three
-        are none (the default), then the functions which get/set/del the
-        appropriate key in the object dictionary will be defined.
+        :param doc: Documentation to be attached to the property.
 
-        @param doc: Documentation to be attached to the property.
-
-        @param OVERRIDE: When true, allow attribute to replace an existing
-        attribute (from a parent class).
+        :param OVERRIDE: When true, allow attribute to replace an existing
+           attribute (from a parent class).
         """
         if verify is not None and not callable(verify):
             raise TypeError("Unknown 'verify' type")
@@ -261,13 +268,18 @@ class Attr(object):
         """
         Tests via smartmatch
 
-        WARNING: hash lookups must be idempotent (looking if the result of
-        a previous lookup had better return the same thing) since we offer
-        no guarantees that validation may not happen more than once.
+        WARNING:
+           hash lookups must be idempotent (looking if the result of
+           a previous lookup had better return the same thing) since we offer
+           no guarantees that validation may not happen more than once.
 
-        GOOD:  `{ "a": "A", "b": "B",  "A": "A", "B": "B" }`
+        GOOD::
 
-        BAD:   `{ "a": "A", "b": "B" }`  # will fail on repeated validation since "A" and "B" are not keys
+           { "a": "A", "b": "B",  "A": "A", "B": "B" }
+
+        BAD::
+
+           { "a": "A", "b": "B" }  # will fail on repeated validation since "A" and "B" are not keys
         """
         return Attr(lambda v: smartmatch(self(v), other), OVERRIDE=self.OVERRIDE, doc=self.doc)
     def __ne__(self, other):
@@ -432,10 +444,10 @@ def amethyst_deflate(obj, deflator=None):
     structure should be easily serializable by most any reasonable
     serialization library (yaml, lxml, ...)
 
-    Makes use of `global_amethyst_encoders` by default. Pass an amethyst
+    Makes use of :py:data:`global_amethyst_encoders` by default. Pass an amethyst
     Object as second argument to make use of any Object-local encoders.
 
-    Note: If your target is JSON, the amethyst object's toJSON() method is
+    Note: If your target is JSON, the amethyst object's :py:func:`Object.toJSON` method is
     probably better.
     """
     global global_amethyst_encoders
@@ -458,14 +470,15 @@ def amethyst_deflate(obj, deflator=None):
 def amethyst_inflate(obj, inflator=None, maxdepth=None):
     """
     Inflate a "dumb" structure to a structure of objects, the opposite of
-    `amethyst_deflate()`. Allows inflation from arbitrary serialization
+    :py:func:`amethyst_deflate`. Allows inflation from arbitrary serialization
     tools, as long as they can produce dicts and lists.
 
-    Makes use of `global_amethyst_encoders` by default. Pass an amethyst
+    Makes use of :py:data:`global_amethyst_encoders` by default. Pass an amethyst
     Object as second argument to make use of any Object-local encoders.
 
-    Note: If your source is JSON, the amethyst object's `fromJSON()` or
-    class `newFromJSON()` method is probably better.
+    Note:
+      If your source is JSON, the amethyst object's :py:func:`Object.fromJSON()` or
+      class :py:func:`Object.newFromJSON()` method is probably better.
     """
     global global_amethyst_hooks
     if maxdepth is not None:
@@ -499,9 +512,10 @@ register_amethyst_type(frozenset, list, frozenset, name="__frozenset__")
 class AttrsMetaclass(type):
     """
     Metaclass for Amethyst Object class descendants. Simply looks at all
-    attributes for any which are instances of `Attr`. The `Attr` itself is
-    saved to the `_attr` class attribute (a dictionary) and a property
-    created in its place via the Attr `build_property` method.
+    attributes for any which are instances of :py:class:`Attr`. The
+    :py:class:`Attr` itself is saved to the :py:attr:`_attr` class
+    attribute (a dictionary) and a property created in its place via the
+    Attr :py:func:`Attr.build_property` method.
     """
     def __new__(cls, class_name, bases, attrs):
         new_attrs = dict()
@@ -554,28 +568,34 @@ BaseObject = AttrsMetaclass(str('BaseObject'), (), {
 class Object(BaseObject):
     """
     Amethyst Base Object
-
-    @cvar amethyst_includeclass: When True (the default), serialization will
-    include a key "__class__" containing the class name of the object which
-    can be used during loading to verify that the object is of the correct
-    type.
-
-    @cvar amethyst_verifyclass: When True (the default), loading data from JSON
-    or a dict passed to `load_data()` will check for the "__class__" key
-    described above, and an exception will be thrown if it is not found.
-
-    @cvar amethyst_import_strategy: When "strict" (the default), then
-    loading data from JSON or a dictionary via `load_data()` requires all
-    keys present in the data structure to correspond with keys in the
-    attribute list. If any additional keys are present, an exception will
-    be raised. When "loose", additional keys will be ignored and not copied
-    into the object dictionary. When "sloppy", unknown attributes will be
-    copied unmodified into the object dict.
     """
-    amethyst_register_type = True
+
     amethyst_includeclass  = True
+    """
+    When True (the default), serialization will include a key "__class__"
+    containing the class name of the object which can be used during
+    loading to verify that the object is of the correct type.
+    """
+
     amethyst_verifyclass   = True
+    """
+    When True (the default), loading data from JSON or a dict passed to
+    :py:func:`load_data()` will check for the "__class__" key described above, and
+    an exception will be thrown if it is not found.
+    """
+
     amethyst_import_strategy = "strict"
+    """
+    When "strict" (the default), then loading data from JSON or a
+    dictionary via :py:func:`load_data()` requires all keys present in the data
+    structure to correspond with keys in the attribute list. If any
+    additional keys are present, an exception will be raised. When "loose",
+    additional keys will be ignored and not copied into the object
+    dictionary. When "sloppy", unknown attributes will be copied unmodified
+    into the object dict.
+    """
+
+    amethyst_register_type = True
     amethyst_classhint_style = "flat"
 
     def __init__(self, *args, **kwargs):
@@ -587,11 +607,12 @@ class Object(BaseObject):
         argument and NO keyword arguments. This situation is intended for
         use with attribute verification. Exact behavior may change, but it
         is not expected to. Such a dictionary will simply be passed to
-        `load_data()`.
+        :py:func:`load_data()`.
 
-        WARNING: Passing a single value to the constructor which is NOT a
-        dictionary object is reserved for internal use only and behavior is
-        likely to change.
+        Warning:
+           Passing a single value to the constructor which is NOT a
+           dictionary object is reserved for internal use only and behavior is
+           likely to change.
         """
         super(Object, self).__init__()
         self._mutable_ = True
@@ -658,7 +679,8 @@ class Object(BaseObject):
 
     def set(self, *args, **kwargs):
         """
-        Verify then set canonicalized value. Positional args take precedence over kwargs.
+        Verify then set canonicalized value. Positional args take
+        precedence over kwargs. ::
 
             obj.set(key, val)
             obj.set(foo=val)
@@ -697,19 +719,19 @@ class Object(BaseObject):
         canonicalized values, and defaults inserted.
 
         This method does not change the object. Typical usage would look
-        like either:
+        like either::
 
             myobj.dict = myobj.validate_data(data)
 
-        or
+        or ::
 
             validated = myobj.validate_data(data)
             mynewobj = MyClass(**validated)
 
-        Subclasses of `Object` can also use this method to inflate specific
-        attibutes at load time. For instance, to inflate non-`Object`
+        Subclasses of :py:class:`Object` can also use this method to inflate specific
+        attibutes at load time. For instance, to inflate non-Object
         objects or ensure objects from hand-written config files. Be sure to
-        override `validate_update` as well if programmatic updates may need
+        override :py:func:`validate_update` as well if programmatic updates may need
         special inflation rules.
         """
         strategy = coalesce(import_strategy, self.amethyst_import_strategy)
@@ -762,16 +784,17 @@ class Object(BaseObject):
         Loads a data dictionary with validation. Modifies the passed dict
         and replaces current self.dict object with the one passed.
 
-        @param import_strategy: Provides a local override to the `amethyst_import_strategy` class attribute.
-        @param verifyclass: Provides a local override to the `amethyst_verifyclass` class attribute.
+        :param import_strategy: Provides a local override to the :py:attr:`amethyst_import_strategy` class attribute.
 
-        This method transparently loads data in either "single-key" or "flat" formats:
+        :param verifyclass: Provides a local override to the :py:attr:`amethyst_verifyclass` class attribute.
+
+        This method transparently loads data in either "single-key" or "flat" formats::
 
             { "__my.module.MyClass__": { ... obj.dict ... } }
 
             { "__class__": "MyClass", ... obj.dict ... }
 
-        Keep in mind that the default base value for `amethyst_verifyclass` is
+        Keep in mind that the default base value for :py:attr:`amethyst_verifyclass` is
         True, so, by default, at least one of the class identification keys
         is expected to be present.
         """
@@ -820,13 +843,13 @@ class Object(BaseObject):
 
         This base encoder, looks up an object's class in a dict and calls
         the corresponding function to do the translation. The built-in
-        translators map:
+        translators map::
 
             set       => { "__set__": [ ... ] }
             frozenset => { "__frozenset__": [ ... ] }
 
         Additional translators may be added by creating a class variable
-        `jsonencoders` which is a dict mapping classes to a function. These
+        :py:attr:`jsonencoders` which is a dict mapping classes to a function. These
         translators will merged onto the base translators (silently
         replacing duplicates) by the metaclass at class (not object)
         creation.
@@ -847,13 +870,13 @@ class Object(BaseObject):
         it should return a new or modified object that should be used instead.
 
         This base encoder, translates single-key dicts into new objects if
-        the single-key is a special value. The built-in translators are:
+        the single-key is a special value. The built-in translators are::
 
             { "__set__": [ ... ] }       => set
             { "__frozenset__": [ ... ] } => frozenset
 
         Additional translators may be added by creating a class variable
-        `jsonhooks` which is a dict mapping the special key to a function.
+        :py:attr:`jsonhooks` which is a dict mapping the special key to a function.
         These translators will merged onto the base translators (silently
         replacing duplicates) by the metaclass at class (not object)
         creation.
@@ -874,23 +897,23 @@ class Object(BaseObject):
         """
         Paramters are sent directly to json.dumps except:
 
-        @param includeclass: When true, include a class indicator using the
-          method requested by the `style` parameter. When `None` (the
-          default), defer to the value of the class variable
-          `amethyst_includeclass`.
+        :param includeclass: When true, include a class indicator using the
+           method requested by the `style` parameter. When `None` (the
+           default), defer to the value of the class variable
+           :py:attr:`amethyst_includeclass`.
 
-        @param style: When including class, what style to use (root-level
-        object only). Options are:
+        :param style: When including class, what style to use (root-level
+           object only). Options are:
 
-            * "flat" to produce a JSON string in the form:
+             * "flat" to produce a JSON string in the form::
 
                 { "__class__": "MyClass", ... obj.dict ... }
 
-            * "single-key" to produce a JSON string in the form:
+             * "single-key" to produce a JSON string in the form::
 
                 { "__my.module.MyClass__": { ... obj.dict ... } }
 
-        The default style is taken from the class `amethyst_classhint_style`
+        The default style is taken from the class :py:attr:`amethyst_classhint_style`
         attribute.
         """
         kwargs.setdefault('default', self.JSONEncoder)
@@ -927,8 +950,9 @@ class Object(BaseObject):
         """
         Paramters are sent directly to json.load or json.loads except:
 
-        @param import_strategy: Provides a local override to the `amethyst_import_strategy` class attribute.
-        @param verifyclass: Provides a local override to the `amethyst_verifyclass` class attribute.
+        :param import_strategy: Provides a local override to the :py:attr:`amethyst_import_strategy` class attribute.
+
+        :param verifyclass: Provides a local override to the :py:attr:`amethyst_verifyclass` class attribute.
         """
         kwargs.setdefault('object_hook', self.JSONObjectHook)
         if isinstance(source, six.string_types):
@@ -949,13 +973,13 @@ class Object(BaseObject):
     def inflate_data(self, obj):
         """
         Inflate a "dumb" structure to a structure of objects, the opposite
-        of `deflate_data()`. Allows inflation from arbitrary serialization
+        of :py:func:`deflate_data()`. Allows inflation from arbitrary serialization
         tools, as long as they can produce dicts and lists.
 
         Note that this method does not import the resulting structure into
         the object. After inflation, create a new Object by passing the
-        inflated structure to a constructor or else call `.load_data()` or
-        call `.validate_update()` followed by `.update()` to replace or
+        inflated structure to a constructor or else call :py:func:`load_data()` or
+        call :py:func:`validate_update()` followed by :py:func:`update()` to replace or
         update the values in an existing object.
         """
         return amethyst_inflate(obj, self)
