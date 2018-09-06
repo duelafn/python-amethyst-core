@@ -209,6 +209,18 @@ class Attr(object):
         else:
             return self.default
 
+    def copy_meta(self, *others):
+        """
+        Copy metadata from another Attr object. This method is used when
+        defining derived attributes (e.g., :py:meth:`strip`) to copy
+        documentation and the OVERRIDE flag. Returns the object itself for
+        chaining.
+        """
+        for attr in others:
+            if (not self.OVERRIDE) and hasattr(attr, "OVERRIDE"): self.OVERRIDE = attr.OVERRIDE
+            if (not self.doc)      and hasattr(attr, "doc"):      self.doc = attr.doc
+        return self
+
     def __call__(self, value, key=None):
         if self.convert:
             value = self.convert(value)
@@ -221,17 +233,11 @@ class Attr(object):
         return value
 
     def __and__(self, other):
-        return Attr(
-            lambda v: other(self(v)),
-            OVERRIDE=(self.OVERRIDE or getattr(other, "OVERRIDE", False)),
-            doc=(self.doc or getattr(other, "doc", None)),
-        )
+        """ """
+        return Attr(lambda v: other(self(v))).copy_meta(self, other)
     def __rand__(self, other):
-        return Attr(
-            lambda v: self(other(v)),
-            OVERRIDE=(self.OVERRIDE or getattr(other, "OVERRIDE", False)),
-            doc=(self.doc or getattr(other, "doc", None)),
-        )
+        """ """
+        return Attr(lambda v: self(other(v))).copy_meta(self, other)
 
     def __or__(self, other):
         def convert(value):
@@ -244,10 +250,8 @@ class Attr(object):
                     return other
                 else:
                     raise err
-        return Attr(convert,
-            OVERRIDE=(self.OVERRIDE or getattr(other, "OVERRIDE", False)),
-            doc=(self.doc or getattr(other, "doc", None)),
-        )
+        return Attr(convert).copy_meta(self, other)
+
     def __ror__(self, other):
         def convert(value):
             try:
@@ -259,10 +263,7 @@ class Attr(object):
                     raise ValueError("Invalid value")
             except ValueError:
                 return self(value)
-        return Attr(convert,
-            OVERRIDE=(self.OVERRIDE or getattr(other, "OVERRIDE", False)),
-            doc=(self.doc or getattr(other, "doc", None)),
-        )
+        return Attr(convert).copy_meta(self, other)
 
     def __eq__(self, other):
         """
@@ -281,7 +282,7 @@ class Attr(object):
 
            { "a": "A", "b": "B" }  # will fail on repeated validation since "A" and "B" are not keys
         """
-        return Attr(lambda v: smartmatch(self(v), other), OVERRIDE=self.OVERRIDE, doc=self.doc)
+        return Attr(lambda v: smartmatch(self(v), other)).copy_meta(self)
     def __ne__(self, other):
         """Ensure no smartmatch"""
         def convert(value):
@@ -295,7 +296,7 @@ class Attr(object):
             # otherwise, we've matched the smartmatch, this we match what
             # we don't want to be - raise a value error.
             raise ValueError("Invalid Value")
-        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
+        return Attr(convert).copy_meta(self)
 
     # This is starting to get cute:
     def __lt__(self, other):
@@ -303,35 +304,38 @@ class Attr(object):
             val = self(value)
             if val < other: return val
             raise ValueError("Invalid Value")
-        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
+        return Attr(convert).copy_meta(self)
     def __le__(self, other):
         def convert(value):
             val = self(value)
             if val <= other: return val
             raise ValueError("Invalid Value")
-        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
+        return Attr(convert).copy_meta(self)
     def __ge__(self, other):
         def convert(value):
             val = self(value)
             if val >= other: return val
             raise ValueError("Invalid Value")
-        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
+        return Attr(convert).copy_meta(self)
     def __gt__(self, other):
         def convert(value):
             val = self(value)
             if val > other: return val
             raise ValueError("Invalid Value")
-        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
+        return Attr(convert).copy_meta(self)
 
     # These modifiers make no sense unless they are idempotent since we may
     # validate multiple times. Thus, we only define those whose semantics
     # swing that way.
     def __mod__(self, other):
-        return Attr(lambda v: self(v) % other, OVERRIDE=self.OVERRIDE, doc=self.doc)
+        """ """
+        return Attr(lambda v: self(v) % other).copy_meta(self)
     def __pos__(self):
-        return Attr(lambda v: +self(v), OVERRIDE=self.OVERRIDE, doc=self.doc)
+        """ """
+        return Attr(lambda v: +self(v)).copy_meta(self)
     def __abs__(self):
-        return Attr(lambda v: abs(self(v)), OVERRIDE=self.OVERRIDE, doc=self.doc)
+        """ """
+        return Attr(lambda v: abs(self(v))).copy_meta(self)
 
     # I don't see much use for float() since it is the first thing you
     # would want to do. However, int() could be useful since
@@ -339,11 +343,14 @@ class Attr(object):
     # floats rather than raising an exception). Just for completeness, we
     # include complex too.
     def float(self):
-        return Attr(lambda v: float(self(v)), OVERRIDE=self.OVERRIDE, doc=self.doc)
+        """ """
+        return Attr(lambda v: float(self(v))).copy_meta(self)
     def int(self):
-        return Attr(lambda v: int(self(v)), OVERRIDE=self.OVERRIDE, doc=self.doc)
+        """ """
+        return Attr(lambda v: int(self(v))).copy_meta(self)
     def complex(self):
-        return Attr(lambda v: complex(self(v)), OVERRIDE=self.OVERRIDE, doc=self.doc)
+        """ """
+        return Attr(lambda v: complex(self(v))).copy_meta(self)
 
     # Can also define a handful of common methods one might wish to call,
     # and call them if present. Happy duck-typing.
@@ -352,70 +359,70 @@ class Attr(object):
         def convert(value):
             value = self(value)
             return value.strip(chars) if hasattr(value, "strip") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
+        return Attr(convert).copy_meta(self)
     def rstrip(self, chars=None):
         """Return a new attribute which strips whitespace from the right side if applicable (duck typing)."""
         def convert(value):
             value = self(value)
             return value.rstrip(chars) if hasattr(value, "rstrip") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
+        return Attr(convert).copy_meta(self)
     def lstrip(self, chars=None):
         """Return a new attribute which strips whitespace from the left side if applicable (duck typing)."""
         def convert(value):
             value = self(value)
             return value.lstrip(chars) if hasattr(value, "lstrip") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
+        return Attr(convert).copy_meta(self)
 
     def encode(self, encoding="UTF-8", errors="strict"):
         """Return a new attribute which encodes value if applicable (duck typing). Defaults to UTF-8 encoding."""
         def convert(value):
             value = self(value)
             return value.encode(encoding, errors) if hasattr(value, "encode") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
+        return Attr(convert).copy_meta(self)
     def decode(self, encoding="UTF-8", errors="strict"):
         """Return a new attribute which decodes value if applicable (duck typing). Defaults to UTF-8 encoding."""
         def convert(value):
             value = self(value)
             return value.decode(encoding, errors) if hasattr(value, "decode") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
+        return Attr(convert).copy_meta(self)
 
     def lower(self):
         """Return a new attribute which lower-cases value if applicable (duck typing)."""
         def convert(value):
             value = self(value)
             return value.lower() if hasattr(value, "lower") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
+        return Attr(convert).copy_meta(self)
     def upper(self):
         """Return a new attribute which upper-cases value if applicable (duck typing)."""
         def convert(value):
             value = self(value)
             return value.upper() if hasattr(value, "upper") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
+        return Attr(convert).copy_meta(self)
     def title(self):
         """Return a new attribute which title-cases value if applicable (duck typing)."""
         def convert(value):
             value = self(value)
             return value.title() if hasattr(value, "title") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
+        return Attr(convert).copy_meta(self)
     def capitalize(self):
         """Return a new attribute which capitalizes value if applicable (duck typing)."""
         def convert(value):
             value = self(value)
             return value.capitalize() if hasattr(value, "capitalize") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
+        return Attr(convert).copy_meta(self)
     def casefold(self):
         """Return a new attribute which casefolds value if applicable (duck typing)."""
         def convert(value):
             value = self(value)
             return value.casefold() if hasattr(value, "casefold") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
+        return Attr(convert).copy_meta(self)
 
     def split(self, sep=None, maxsplit=-1):
         """Return a new attribute which splits its value if applicable (duck typing)."""
         def convert(value):
             value = self(value)
             return value.split(sep, maxsplit) if hasattr(value, "split") else value
-        return Attr(convert, OVERRIDE=self.OVERRIDE, doc=self.doc)
+        return Attr(convert).copy_meta(self)
 
 
 global_amethyst_encoders = dict()
