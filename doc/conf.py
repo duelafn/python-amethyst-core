@@ -16,7 +16,7 @@ extensions     = [
     'sphinx.ext.autosummary'
 ]
 
-autodoc_default_flags = [ 'members', 'undoc-members' ]
+autodoc_default_flags = [ 'members' ]
 autodoc_member_order = 'bysource'
 autosummary_generate = True
 

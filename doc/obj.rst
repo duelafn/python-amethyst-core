@@ -10,6 +10,7 @@ amethyst.core.obj
      Attr
      amethyst_deflate
      amethyst_inflate
+     register_amethyst_type
 
 
 .. automodule:: amethyst.core.obj

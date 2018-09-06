@@ -43,8 +43,8 @@ DESCRIPTION
 
 Implements the dictionary interface and stores everything in self.dict.
 
-Subclasses can define :py:class:`Attr`s which will have properties defined as
-shortcuts to read and write keys in the dictionary.
+Subclasses can define :py:class:`Attr` which will have properties defined
+as shortcuts to read and write keys in the dictionary.
 
 By storing all attributes in a dict, we can be trivially serialized.
 toJSON() and fromJSON() methods exist to help with this, and should be used
@@ -175,6 +175,7 @@ class Attr(object):
         self.OVERRIDE = OVERRIDE
 
     def build_property(self, name):
+        """ """
         if self.fget is None and self.fset is None and self.fdel is None:
 
             def fget(obj):
@@ -204,6 +205,7 @@ class Attr(object):
             return property(self.fget, self.fset, self.fdel, self.doc)
 
     def get_default(self):
+        """ """
         if callable(self.default):
             return self.default()
         else:
@@ -222,6 +224,7 @@ class Attr(object):
         return self
 
     def __call__(self, value, key=None):
+        """ """
         if self.convert:
             value = self.convert(value)
         if self.isa:
@@ -240,6 +243,7 @@ class Attr(object):
         return Attr(lambda v: self(other(v))).copy_meta(self, other)
 
     def __or__(self, other):
+        """ """
         def convert(value):
             try:
                 return self(value)
@@ -253,6 +257,7 @@ class Attr(object):
         return Attr(convert).copy_meta(self, other)
 
     def __ror__(self, other):
+        """ """
         def convert(value):
             try:
                 if callable(other):
@@ -269,18 +274,14 @@ class Attr(object):
         """
         Tests via smartmatch
 
-        WARNING:
-           hash lookups must be idempotent (looking if the result of
+        .. WARNING::
+           Hash lookups must be idempotent (looking up the result of
            a previous lookup had better return the same thing) since we offer
            no guarantees that validation may not happen more than once.
 
-        GOOD::
+           GOOD:: :code:`{ "a": "A", "b": "B",  "A": "A", "B": "B" }`
 
-           { "a": "A", "b": "B",  "A": "A", "B": "B" }
-
-        BAD::
-
-           { "a": "A", "b": "B" }  # will fail on repeated validation since "A" and "B" are not keys
+           BAD:: :code:`{ "a": "A", "b": "B" }  # will fail on repeated validation since "A" and "B" are not keys`
         """
         return Attr(lambda v: smartmatch(self(v), other)).copy_meta(self)
     def __ne__(self, other):
@@ -300,24 +301,28 @@ class Attr(object):
 
     # This is starting to get cute:
     def __lt__(self, other):
+        """ """
         def convert(value):
             val = self(value)
             if val < other: return val
             raise ValueError("Invalid Value")
         return Attr(convert).copy_meta(self)
     def __le__(self, other):
+        """ """
         def convert(value):
             val = self(value)
             if val <= other: return val
             raise ValueError("Invalid Value")
         return Attr(convert).copy_meta(self)
     def __ge__(self, other):
+        """ """
         def convert(value):
             val = self(value)
             if val >= other: return val
             raise ValueError("Invalid Value")
         return Attr(convert).copy_meta(self)
     def __gt__(self, other):
+        """ """
         def convert(value):
             val = self(value)
             if val > other: return val
@@ -428,6 +433,51 @@ class Attr(object):
 global_amethyst_encoders = dict()
 global_amethyst_hooks = dict()
 def register_amethyst_type(cls, encode, decode, name=None, overwrite=False, wrap_encode=True):
+    """
+    Adds a type to the global list (:py:data:`global_amethyst_encoders`)
+    for object encoding and decoding. Subclasses of :py:class:`Object` are
+    automatically registered, so you should only need to register external
+    objects that you use.
+
+    :param class cls: Class to register
+
+    :param callable encode: Callable which will transform the object into a "dumb"
+        structure of primitive objects (dict, list, str, int, float).
+
+    :param callable decode: Callable which will transform the "dumb" structure of
+        primitive objects back into the object.
+
+    :param str name: Globally unique string identifying the class. This
+        name should be something which won't appear as a dictionary key in
+        normal data. Defaults to "__MODULENAME.CLASSNAME__"
+
+    :param bool overwrite: By default, this function will raise an error if
+        a class or name is aready registered. Pass True to override any
+        existing registrations.
+
+    :param bool wrap_encode: By default, the encoded object will be wrapped
+        in a single-key dict: :code:`{ name: ENCODED_OBJECT }` so that the
+        decoder can be called when inflating a structure containing the
+        object. Pass True in this parameter in order to avoid wrapping the
+        encoded structure.
+
+        You might want to set this parameter if your object is naturally
+        expressed as a basic object and you are certain that all uses after
+        inflation will automatically coerce the value to your desired
+        object when needed. For instance, a URL object where all functions
+        and methods which accept the URL object also accept a plain string.
+        You could pass an encoder which deflates to plain strings and set
+        :code:`wrap_encode=False` and then URLs would appear as plain strings in
+        your exported structures, which may be easier to work with in
+        external applications.
+
+        This option also offers an escape hatch for hypothetical cases
+        where you may need to wrap your encoded object in your encoder
+        itself.
+
+    .. seealso:: :py:func:`amethyst_deflate` and :py:func:`amethyst_inflate`
+
+    """
     if name is None:
         if isinstance(cls, BaseObject):
             name = cls._dundername
@@ -483,7 +533,7 @@ def amethyst_inflate(obj, inflator=None, maxdepth=None):
     Makes use of :py:data:`global_amethyst_encoders` by default. Pass an amethyst
     Object as second argument to make use of any Object-local encoders.
 
-    Note:
+    .. note::
       If your source is JSON, the amethyst object's :py:func:`Object.fromJSON()` or
       class :py:func:`Object.newFromJSON()` method is probably better.
     """
@@ -616,7 +666,7 @@ class Object(BaseObject):
         is not expected to. Such a dictionary will simply be passed to
         :py:func:`load_data()`.
 
-        Warning:
+        .. warning::
            Passing a single value to the constructor which is NOT a
            dictionary object is reserved for internal use only and behavior is
            likely to change.
@@ -647,16 +697,20 @@ class Object(BaseObject):
                 self.dict[name] = attr.get_default()
 
     def assert_mutable(self, msg="May not modify, object is immutable"):
+        """ """
         if not self._mutable_:
             raise ImmutableObjectException(msg)
         return self
 
     def is_mutable(self):
+        """ """
         return self._mutable_
     def make_mutable(self):
+        """ """
         self._mutable_ = True
         return self
     def make_immutable(self):
+        """ """
         self._mutable_ = False
         return self
 
@@ -666,22 +720,31 @@ class Object(BaseObject):
         return repr(self.dict)
 
     def __len__(self):
+        """ """
         return len(self.dict)
     def __contains__(self, key):
+        """ """
         return key in self.dict
     def __iter__(self):
+        """ """
         return iter(self.dict)
 
     def __getitem__(self, key):
+        """ """
         return self.dict[key]
     def __setitem__(self, key, value):
+        """
+        .. warning:: Bypasses validation!
+        """
         self.assert_mutable()
         self.dict[key] = value
     def __delitem__(self, key):
+        """ """
         self.assert_mutable()
         del self.dict[key]
 
     def get(self, key, dflt=None):
+        """ """
         return self.dict.get(key, dflt)
 
     def set(self, *args, **kwargs):
@@ -705,12 +768,13 @@ class Object(BaseObject):
         return self.dict[key]
 
     def pop(self, key, dflt=None):
+        """ """
         self.assert_mutable()
         return self.dict.pop(key, dflt)
 
     def update(self, *args, **kwargs):
         """
-        Update without verification
+        .. warning:: Bypasses validation!
         """
         self.assert_mutable()
         for d in args:
@@ -905,7 +969,7 @@ class Object(BaseObject):
         Paramters are sent directly to json.dumps except:
 
         :param includeclass: When true, include a class indicator using the
-           method requested by the `style` parameter. When `None` (the
+           method requested by the :code:`style` parameter. When `None` (the
            default), defer to the value of the class variable
            :py:attr:`amethyst_includeclass`.
 
@@ -946,6 +1010,7 @@ class Object(BaseObject):
 
     @classmethod
     def newFromJSON(cls, source, import_strategy=None, verifyclass=None, **kwargs):
+        """ """
         self = cls()
         mutable = self.is_mutable()# In case some subclass is default immutable
         if not mutable: self.make_mutable()
