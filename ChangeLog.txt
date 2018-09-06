@@ -1,8 +1,14 @@
 
-amethyst-core 0.6.1
+amethyst-core 0.6.1 release 2018-09-06
 
   * Use Attr(OVERRIDE=True) to avoid DuplicateAttributeException
   * Add class/attribute name to various error messages to aid in debugging
+  * Use register_amethyst_type(wrap_encode=False) to skip auto-wrapping
+    encoded values in a dict (e.g., for plain string-encodable types)
+  * Attr copies .doc property when creating derived Attrs (e.g., using Attr.strip())
+  * fromJSON and newFromJSON accept file handles in addition to strings
+  * Split out functions amethyst_deflate and amethyst_inflate for external serialization
+  * More documentation
 
 amethyst-core 0.6.0 released 2017-04-24
 
