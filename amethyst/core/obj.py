@@ -12,10 +12,6 @@ SYNOPSIS
     from amethyst.core import Object, Attr
 
     class MyObject(Object):
-        # Private encoders available only this this class and subclasses
-        jsonencoders = { MyClass:       (lambda obj: { "__myclass__": obj.toDict() }) }
-        jsonhooks    = { "__myclass__": (lambda obj: MyClass(**obj)) }
-
         # Attr() defines properties and will include in serialization.
         foo = Attr(int)
         bar = Attr(str).strip()
