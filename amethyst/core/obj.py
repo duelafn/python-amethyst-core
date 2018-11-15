@@ -725,6 +725,24 @@ class Object(BaseObject):
         """ """
         return iter(self.dict)
 
+
+    def items(self, **kwargs):
+        """ """
+        for name, attr in six.iteritems(self._attrs):
+            if name in self.dict:
+                yield name, self.dict[name]
+    iteritems = items
+    def keys(self, **kwargs):
+        """ """
+        for name, attr in six.iteritems(self._attrs):
+            if name in self.dict:
+                yield name
+    def values(self, **kwargs):
+        """ """
+        for name, attr in six.iteritems(self._attrs):
+            if name in self.dict:
+                yield self.dict[name]
+
     def __getitem__(self, key):
         """ """
         return self.dict[key]

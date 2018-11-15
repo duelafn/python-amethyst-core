@@ -121,5 +121,24 @@ class MyTest(unittest.TestCase):
         self.assertTrue(a.baz is b.baz, "default list initializes identical object")
 
 
+    def test_integration(self):
+        class Obj5(Object):
+            foo = Attr(int)
+            bar = Attr()
+            baz = Attr(float)
+            bip = Attr(float)
+
+        try:
+            import six
+            obj = Obj5(foo=12, bar="hi", baz=2.3)
+            got = set()
+            for k, v in six.iteritems(obj):
+                got.add("{}={}".format(k, v))
+            self.assertEqual(got, set(["foo=12", "bar=hi", "baz=2.3"]), "works with six.iteritems")
+
+        except ImportError:
+            raise unittest.SkipTest("six not installed, skipping six integration tests")
+
+
 if __name__ == '__main__':
     unittest.main()
