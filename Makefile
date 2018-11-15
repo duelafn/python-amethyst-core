@@ -50,8 +50,8 @@ sdist: test
 	python3 setup.py sdist
 
 test:
-	python3 setup.py test >/dev/null
-	python2 setup.py test >/dev/null
+	python3 setup.py nosetests >/dev/null
+	python2 setup.py nosetests >/dev/null
 
 tox:
 	tox
