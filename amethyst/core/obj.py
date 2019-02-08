@@ -505,7 +505,7 @@ def amethyst_deflate(obj, deflator=None):
     """
     global global_amethyst_encoders
 
-    if isinstance(obj, (six.string_types, six.binary_type, numbers.Number, True, False, None)):
+    if obj is None or isinstance(obj, (six.string_types, six.binary_type, numbers.Number, bool)):
         return obj
     elif isinstance(obj, dict):
         return { six.text_type(k): amethyst_deflate(obj[k], deflator) for k in obj }
