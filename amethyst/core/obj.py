@@ -140,6 +140,10 @@ class Attr(object):
            default is a callable, it will be called to produce the default
            (e.g., `list`).
 
+            .. note::
+              The default value (or result of callable) is assumed valid
+              and will not pass through conversion or validation.
+
         :param builder: Callable which will lazily build a default value
            when the attribute is first used.
 
