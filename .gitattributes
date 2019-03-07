@@ -1,0 +1,7 @@
+
+# Don't export some files when making release tars
+.gitattributes export-ignore
+.gitignore export-ignore
+/Makefile
+/debian export-ignore
+/extra/flake8.ini export-ignore
