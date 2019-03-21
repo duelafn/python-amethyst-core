@@ -1,4 +1,9 @@
 
+amethyst-core 0.6.3 release 2019-03-21
+
+  * documentation updates
+  * version bump for pypi test-release
+
 amethyst-core 0.6.2 release 2019-02-08
 
   * bugfix: error in using isinstance on bools in amethyst_deflate
