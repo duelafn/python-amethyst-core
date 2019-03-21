@@ -4,6 +4,10 @@
 Generic serializable object
 ***************************
 
+.. |br| raw:: html
+
+   <br />
+
 SYNOPSIS
 ========
 
@@ -29,7 +33,7 @@ SYNOPSIS
     myobj.toJSON()   # { "__my.module.MyObject__": { "foo": 23 } }
 
     myobj = MyObject()
-    myobj.fromJSON({ "foo": 23, "bar": " plugh  " })
+    myobj.fromJSON('{ "foo": 23, "bar": " plugh  " }')
     print(myobj.bar)      # "plugh"  (no spaces)
 
 
@@ -121,6 +125,7 @@ class Attr(object):
         class MyClass2(amethyst.core.Object):
             foo = Attr(MyClass)
 
+    :ivar name: Attribute name when assigned to an Object (auto-set by metaclass).
     """
     def __init__(self, convert=None, verify=None, isa=None, default=None, builder=None, fget=None, fset=None, fdel=None, doc=None, OVERRIDE=False):
         """
@@ -130,11 +135,12 @@ class Attr(object):
            should raise a ValueError(). If converter is `None`, values will
            be passed unmodified.
 
+        :param isa: Called after conversion but before verification,
+           ensures that the value is one of the passed types. Is a shortcut
+           for `verify=lambda val: isinstance(val, isa)`
+
         :param verify: Attribute verifier. Called after conversion, this
            callable should return a truthy result if the value is acceptable.
-
-        :param isa: Called after conversion but before verification,
-           ensures that the value is one of the passed types.
 
         :param default: Default value applied at object creation time. If
            default is a callable, it will be called to produce the default
@@ -142,7 +148,7 @@ class Attr(object):
 
             .. note::
               The default value (or result of callable) is assumed valid
-              and will not pass through conversion or validation.
+              and will not pass through conversion or verification.
 
         :param builder: Callable which will lazily build a default value
            when the attribute is first used.
@@ -272,7 +278,7 @@ class Attr(object):
 
     def __eq__(self, other):
         """
-        Tests via smartmatch
+        Tests via :py:func:`amethyst.core.util.smartmatch`
 
         .. WARNING::
            Hash lookups must be idempotent (looking up the result of
@@ -461,6 +467,8 @@ def register_amethyst_type(cls, encode, decode, name=None, overwrite=False, wrap
         object. Pass True in this parameter in order to avoid wrapping the
         encoded structure.
 
+        |br|
+
         You might want to set this parameter if your object is naturally
         expressed as a basic object and you are certain that all uses after
         inflation will automatically coerce the value to your desired
@@ -470,6 +478,8 @@ def register_amethyst_type(cls, encode, decode, name=None, overwrite=False, wrap
         :code:`wrap_encode=False` and then URLs would appear as plain strings in
         your exported structures, which may be easier to work with in
         external applications.
+
+        |br|
 
         This option also offers an escape hatch for hypothetical cases
         where you may need to wrap your encoded object in your encoder
@@ -625,6 +635,36 @@ BaseObject = AttrsMetaclass(str('BaseObject'), (), {
 class Object(BaseObject):
     """
     Amethyst Base Object
+
+    :ivar _attr: Dictionary mapping attribute names to :py:class:`Attr`
+      objects. Should not be modified, but can be read for introspection of
+      an Object.
+
+    :ivar _jsonencoders: Dictionary mapping class objects to callable
+      encoders which should produce a JSON-serializable object. These
+      functions are called from the JSONEncoder method. Per the json
+      documentation, these functions should return an object which is JSON
+      serializable or else raise a TypeError. These encoders are specific
+      to the class. Use :py:func:`register_amethyst_type` to register a
+      class globally.
+
+      .. note::
+        _jsonencoders is a lower-level tool than
+        :py:func:`register_amethyst_type` and offers direct access to the
+        encoders (behaves like `overwrite=True, wrap_encode=False`)
+
+    :ivar _jsonhooks: Dictionary mapping class identifiers (strings of form
+      "__MODULENAME.CLASSNAME__") to callable decoders which should inflate
+      simple structures to corresponding objects. These functions are
+      called from the JSONObjectHook method when inflating data. These
+      decoders are specific to the class. Use
+      :py:func:`register_amethyst_type` to register a class globally.
+
+      .. note::
+        _jsonhooks is a lower-level tool than
+        :py:func:`register_amethyst_type` and offers direct access to the
+        decoders (behaves like `overwrite=True, wrap_encode=False`)
+
     """
 
     amethyst_includeclass  = True
@@ -803,9 +843,10 @@ class Object(BaseObject):
 
     def validate_data(self, d, import_strategy=None):
         """
-        Convert and validate with the intention of updating only some of
-        the object's .dict values. Returns a new dictionary with
-        canonicalized values, and defaults inserted.
+        Convert and validate with the intention of replacing all of the
+        object's .dict values. Returns a new dictionary with canonicalized
+        values, *and defaults inserted* (which distinguishes this from
+        :py:func:`validate_update`).
 
         This method does not change the object. Typical usage would look
         like either::
@@ -840,7 +881,9 @@ class Object(BaseObject):
         """
         Convert and validate with the intention of updating only some of
         the object's .dict values. Returns a new dictionary with
-        canonicalized values.
+        canonicalized values, but *does not initialize any missing keys
+        with attribute default values* (which distinguishes this from
+        :py:func:`validate_data`).
 
         This method does not change the object. Pass the resulting dict to
         the .update() method if you decide to accept the changes.
