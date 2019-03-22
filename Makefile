@@ -16,7 +16,8 @@ PKGNAME = amethyst-core
 PKG_VERSION = $(shell python -c 'import re; print(re.search("__version__ = \"([\d.]+)\"", open("amethyst/core/__init__.py").read()).group(1))')
 PY_PATHS = tests amethyst
 
-SDIST_TAR_GZ=dist/${PKG_VERSION}/${PKGNAME}_${PKG_VERSION}.tar.gz
+SDIST_TAR_GZ=dist/${PKGNAME}-${PKG_VERSION}.tar.gz
+VSDIST_TAR_GZ=dist/${PKG_VERSION}/${PKGNAME}-${PKG_VERSION}.tar.gz
 
 .PHONY: all sdist dist debbuild clean test doc
 
@@ -36,7 +37,7 @@ debbuild: test sdist
 	rm -rf debbuild
 	mkdir -p debbuild
 	cp -f ${SDIST_TAR_GZ} debbuild/${PKGNAME}_${PKG_VERSION}.orig.tar.gz
-	cd debbuild && tar -xzf ${SDIST_TAR_GZ}
+	cd debbuild && tar -xzf ${PKGNAME}_${PKG_VERSION}.orig.tar.gz
 	cp -r debian debbuild/${PKGNAME}-${PKG_VERSION}/
 	cd debbuild/${PKGNAME}-${PKG_VERSION} && dpkg-buildpackage -rfakeroot -uc -us
 
@@ -44,17 +45,17 @@ dist: test debbuild wheel
 	rm -rf dist/${PKG_VERSION}
 	@mkdir -p dist/${PKG_VERSION}
 	mv -f debbuild/${PKGNAME}_* debbuild/*.deb dist/${PKG_VERSION}/
-	mv -f dist/*.whl dist/${PKG_VERSION}/
+	mv -f ${SDIST_TAR_GZ} dist/*.whl dist/${PKG_VERSION}/
 	rm -rf debbuild
 
 doc:
 	sphinx-build -q -n -E -b singlehtml doc _doc/html
 
-publish-test: dist
-	python3 -m twine upload --repository testpypi dist/${PKG_VERSION}/*.whl ${SDIST_TAR_GZ}
+publish-test:
+	python3 -m twine upload --repository testpypi dist/${PKG_VERSION}/*.whl ${VSDIST_TAR_GZ}
 
-publish: dist
-	python3 -m twine upload --repository pypi dist/${PKG_VERSION}/*.whl ${SDIST_TAR_GZ}
+publish:
+	python3 -m twine upload --repository pypi dist/${PKG_VERSION}/*.whl ${VSDIST_TAR_GZ}
 	@echo "TODO:"
 	@echo "  git tag -s v${PKG_VERSION} -m '${PKGNAME} ${PKG_VERSION}'"
 	@echo "  git push origin v${PKG_VERSION}"
