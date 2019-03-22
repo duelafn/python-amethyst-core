@@ -1,0 +1,168 @@
+
+amethyst-core
+=============
+
+A sober python base library for python 2.7 or python 3.
+
+.. CAUTION:: EXPERIMENTAL CODE. The interface to this library is not yet
+   stable. At this time, improvements will be made to the interface without
+   regard to backward compatibility. Backward-incompatible changes will not
+   necessarily be documented in the changelog, and changes may be added
+   which eat your puppy.
+
+   Due to the experimental status of this code, all ideas, suggestions, or
+   comments are welcome and encouraged --- now is the time to break things!
+
+
+A Generic Serializable Object
+-----------------------------
+
+The primary product of this module is a base python object class designed
+for easy serialization. JSON serialization and de-serialization come for
+free for attributes of (most of the) core python object types.
+
+A Basic Class:
+
+.. code:: python
+
+   from amethyst.core import Object, Attr
+
+   class MyObject(Object):
+       foo = Attr(int)
+       bar = Attr(isa=str).strip()
+
+   myobj = MyObject( dict(foo=23) )
+   print(myobj.foo)      # => 23
+
+
+Validation / Coersion
+^^^^^^^^^^^^^^^^^^^^^
+
+.. IMPORTANT:: Attributes are validated and coerced only when processed by
+   certain methods. This is a somewhat controvercial choice, but allows us
+   to only pay the validation costs when loading from external/untrusted
+   sources.
+
+.. code:: python
+
+   class MyObject(Object):
+       amethyst_verifyclass = False  # don't check json for class name
+       foo = Attr(int)               # coerce to int
+       bar = Attr(isa=str).strip()   # ensure str then strip whitespace
+
+Validated
+"""""""""
+
+* dictionary constructor
+
+  .. code:: python
+
+     myobj = MyObject({ "foo": "23", "bar": "Hello " })
+     print(isinstance(myobj.foo, int))       # True
+     print(myobj.bar)                        # "Hello"
+
+* set and load_data methods
+
+  .. code:: python
+
+     myobj.setdefault("foo", "Not an int")   # Raises exception if foo unset
+     myobj.set("foo", "Not an int")          # Raises exception
+
+     # Converts and trims
+     myobj.load_data({"foo": "23", "bar": "Hello "})
+
+* loading from JSON
+
+  .. code:: python
+
+     # Converts and trims
+     myobj = MyObject.newFromJSON('{"foo": "23", "bar": "Hello "}')
+     myobj.fromJSON('{"foo": "23", "bar": "Hello "}')
+
+
+Not Validated
+"""""""""""""
+
+* kwargs constructor
+
+  .. code:: python
+
+     myobj = MyObject(foo="23", bar="Hello ")
+     print(isinstance(myobj.foo, int))       # False
+     print(myobj.bar)                        # "Hello "
+
+
+* assignment
+
+  .. code:: python
+
+     myobj.foo = "Not an int"                # Not an exception!
+     myobj["foo"] = "Not an int"             # Not an exception!
+
+* update method
+
+  .. code:: python
+
+     myobj.update(foo="Not an int")          # Not an exception!
+
+
+Serialization
+^^^^^^^^^^^^^
+
+We immediately get instantiation and loading from JSON or from vanilla
+dictionaries:
+
+.. code:: python
+
+   myobj = MyObject.newFromJSON(
+       '{"foo":23, "bar":" plugh  "}',
+       verifyclass=False
+   )
+   print(myobj.bar)      # => "plugh"  (spaces stripped)
+
+JSON gets some special treatment, but anything that produces an appropriate
+dictionary will work for serialization.
+
+.. code:: python
+
+   myobj = MyObject()
+   myobj.load_data(yaml.load(open("myobject.yaml")))
+
+By default, import and export try to make sure that the object is a
+serialization of the correct type of object. Metadata are automatically,
+injected into the serialization to identify the proper type fo the data.
+This can be disabled on a per-call basis as seen above with the
+``verifyclass`` keyword argument, or on a per-class basis by setting some
+attributes.
+
+This metadata can be encoded in two different ways depending on what you
+find most convenient for your situation (the "flat" style is the default):
+
+.. code:: python
+
+   myobj = MyObject(foo=23)
+
+   print(myobj.toJSON())     # The default, style="flat"
+   # => {"__class__": "__mymodule.MyObject__", "foo": 23}
+
+   print(myobj.toJSON(style="single-key"))
+   # => {"__mymodule.MyObject__": {"foo": 23}}
+
+   print(myobj.toJSON(includeclass=False))
+   # => { "foo": 23 }
+
+If you want no munging or class verification at all, set class parameters:
+
+.. code:: python
+
+   class MyObject(Object):
+       amethyst_includeclass  = False
+       amethyst_verifyclass   = False
+
+       foo = Attr(int)
+       bar = Attr(isa=str).strip()
+
+   # No extra class info due to modified defaults:
+   myobj = MyObject.newFromJSON('{"foo":"23", "bar":" plugh  "}')
+   print(myobj.toJSON())
+   # => { "foo": 23, "bar": "plugh" }

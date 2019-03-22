@@ -16,6 +16,7 @@ A sober python base library
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
+import io
 import re
 import setuptools
 import unittest
@@ -24,6 +25,9 @@ __version__ = re.search(r'(?m)^__version__\s*=\s*"([\d.]+(?:[\-\+~.]\w+)*)"', op
 
 def my_test_suite():
     return unittest.TestLoader().discover('tests', pattern='test_*.py')
+
+with io.open('README.rst', encoding='UTF-8') as fh:
+    readme = fh.read()
 
 setuptools.setup(
     name         = 'amethyst-core',
@@ -45,6 +49,7 @@ setuptools.setup(
     author       = "Dean Serenevy",
     author_email = 'dean@serenevy.net',
     description  = "A sober python base library",
+    long_description = readme,
     packages     = setuptools.find_packages(),
     requires     = [ "six", ],
     install_requires = [ 'setuptools' ],
