@@ -16,7 +16,7 @@ A sober python base library
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-__version__ = "0.6.3"
+__version__ = "0.6.4"
 
 from .util import *   # noqa: F403, F401
 from .obj  import *   # noqa: F403, F401
