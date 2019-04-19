@@ -879,7 +879,7 @@ class Object(BaseObject):
         for key, val in six.iteritems(d):
             attr = self._attrs.get(key)
             if attr is None and strategy == "strict":
-                raise ValueError("key {} not permitted in {} object".format(key, self._dundername))
+                raise KeyError("key {} not permitted in {} object".format(key, self._dundername))
             elif attr is not None:
                 data[key] = attr(val, key)
         return data

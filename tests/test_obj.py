@@ -37,6 +37,37 @@ class MyTest(unittest.TestCase):
             obj.fromJSON('{}')
 
 
+    def test_other_attrs(self):
+        """Other attributes explicitly allowed and are not stored in data hash"""
+        class ObjOther(Object):
+            foo = Attr(int)
+            bar = Attr(isa=six.text_type).strip()
+
+        myobj = ObjOther(foo=23)
+        myobj.other = 15
+        self.assertEqual(myobj.other, 15)
+        self.assertEqual(myobj.deflate_data().get("other", None), None)
+        self.assertFalse("other" in myobj.toJSON())
+
+        with self.assertRaises(AttributeError, msg="Getattr raises exception for names undeclared attrs"):
+            myobj.undefined
+        with self.assertRaises(KeyError):
+            myobj['undefined'] = 42
+        with self.assertRaises(KeyError):
+            print(myobj['undefined'])
+        self.assertEqual(myobj.deflate_data().get("undefined", None), None)
+        self.assertFalse("undefined" in myobj.toJSON())
+
+        # However, the dict interface should be for proper attrs only
+        with self.assertRaises(KeyError):
+            print(myobj['other'])
+        with self.assertRaises(KeyError):
+            myobj['other'] = 42
+        self.assertEqual(myobj.other, 15)
+        self.assertEqual(myobj.deflate_data().get("other", None), None)
+        self.assertFalse("other" in myobj.toJSON())
+
+
     def test_README_validation(self):
         class MyObject(Object):
             amethyst_verifyclass = False
@@ -203,9 +234,6 @@ class MyTest(unittest.TestCase):
 
         with self.assertRaises(ImmutableObjectException, msg="Can't set fields when immutable"):
             obj["foo"] = 23
-
-        with self.assertRaises(AttributeError, msg="Getattr raises exception for names undeclared attrs"):
-            obj.undefined
 
         self.assertIs(obj.make_mutable(), obj, "make_mutable returns self")
         self.assertTrue(obj.is_mutable(), "is mutable")
