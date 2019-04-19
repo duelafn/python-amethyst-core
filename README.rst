@@ -12,9 +12,6 @@ A sober python base library for python 2.7 or python 3. (`Full Documentation`_)
    necessarily be documented in the changelog, and changes may be added
    which eat your puppy.
 
-   Due to the experimental status of this code, all ideas, suggestions, or
-   comments are welcome and encouraged --- now is the time to break things!
-
 
 A Generic Serializable Object
 -----------------------------
@@ -33,17 +30,12 @@ A Basic Class:
        foo = Attr(int)
        bar = Attr(isa=str).strip()
 
-   myobj = MyObject( dict(foo=23) )
-   print(myobj.foo)      # => 23
+   myobj = MyObject(foo="23")
+   print(myobj.foo + 1)      # => 24
 
 
 Validation / Coersion
 ^^^^^^^^^^^^^^^^^^^^^
-
-.. IMPORTANT:: Attributes are validated and coerced only when processed by
-   certain methods. This is a somewhat controvercial choice, but allows us
-   to only pay the validation costs when loading from external/untrusted
-   sources.
 
 .. code:: python
 
@@ -52,30 +44,42 @@ Validation / Coersion
        foo = Attr(int)               # coerce to int
        bar = Attr(isa=str).strip()   # ensure str then strip whitespace
 
+
 Validated
 """""""""
 
-* dictionary constructor
+* constructors
 
   .. code:: python
 
      myobj = MyObject({ "foo": "23", "bar": "Hello " })
-     print(isinstance(myobj.foo, int))       # True
-     print(myobj.bar)                        # "Hello"
+     myobj = MyObject(foo="23", bar="Hello ")
+     print(isinstance(myobj.foo, int))     # True
+     print(myobj.bar)                      # "Hello"
 
-* set and load_data methods
+* assignment
 
   .. code:: python
 
-     myobj.setdefault("foo", "Not an int")   # Raises exception if foo unset
-     myobj.set("foo", "Not an int")          # Raises exception
+     myobj["foo"] = "23"                   # Converts to int
+     myobj["foo"] = "Not an int"           # Raises exception
+     myobj.foo = "23"                      # Converts to int
+     myobj.foo = "Not an int"              # Raises exception
+
+* set and update methods
+
+  .. code:: python
+
+     myobj.set("foo", value)               # Convert to int or raise exception
+     myobj.update(foo=value)               # Convert to int or raise exception
+     myobj.setdefault("foo", value)        # Convert or raise only if foo unset
+
+* loading fresh from dict or json
+
+  .. code:: python
 
      # Converts and trims
      myobj.load_data({"foo": "23", "bar": "Hello "})
-
-* loading from JSON
-
-  .. code:: python
 
      # Converts and trims
      myobj = MyObject.newFromJSON('{"foo": "23", "bar": "Hello "}')
@@ -85,75 +89,56 @@ Validated
 Not Validated
 """""""""""""
 
-* kwargs constructor
-
   .. code:: python
 
-     myobj = MyObject(foo="23", bar="Hello ")
-     print(isinstance(myobj.foo, int))       # False
-     print(myobj.bar)                        # "Hello "
-
-
-* assignment
-
-  .. code:: python
-
-     myobj.foo = "Not an int"                # Not an exception!
-     myobj["foo"] = "Not an int"             # Not an exception!
-
-* update method
-
-  .. code:: python
-
-     myobj.update(foo="Not an int")          # Not an exception!
+     myobj.direct_set("foo", "Not an int")     # DANGER: Not an exception!
+     myobj.direct_update(foo="Not an int")     # DANGER: Not an exception!
 
 
 Serialization
 ^^^^^^^^^^^^^
 
-We immediately get instantiation and loading from JSON or from vanilla
-dictionaries:
+JSON text can be produced and loaded, even for nested objects.
 
 .. code:: python
 
-   myobj = MyObject.newFromJSON(
-       '{"foo":23, "bar":" plugh  "}',
-       verifyclass=False
-   )
-   print(myobj.bar)      # => "plugh"  (spaces stripped)
+   json_string = myobj.toJSON()
+   myobj2 = MyObject.newFromJSON(json_string)
 
-JSON gets some special treatment, but anything that produces an appropriate
-dictionary will work for serialization.
+Other serialization libraries can easily be used as well.
 
 .. code:: python
 
-   myobj = MyObject()
-   myobj.load_data(yaml.load(open("myobject.yaml")))
+   yaml_string = yaml.dump(myobj.deflate_data())
+   myobj2 = MyObject.inflate_new(yaml.safe_load(yaml_string))
 
-By default, import and export try to make sure that the object is a
-serialization of the correct type of object. Metadata are automatically,
-injected into the serialization to identify the proper type fo the data.
-This can be disabled on a per-call basis as seen above with the
-``verifyclass`` keyword argument, or on a per-class basis by setting some
-attributes.
 
-This metadata can be encoded in two different ways depending on what you
-find most convenient for your situation (the "flat" style is the default):
+By default the JSON serializer injects type hints to ensure that objects
+are de-serialized into the correct class:
 
 .. code:: python
 
-   myobj = MyObject(foo=23)
+   # print(MyObject(foo=23, bar="plugh").toJSON())
+   {"__class__": "__mymodule.MyObject__", "foo": 23, "bar": "plugh"}
 
-   print(myobj.toJSON())     # The default, style="flat"
-   # => {"__class__": "__mymodule.MyObject__", "foo": 23}
+When building an object from JSON, the constructor will look for these
+hints and raise a ValueError if the type hint is missing or imported into
+the wrong class.
 
-   print(myobj.toJSON(style="single-key"))
-   # => {"__mymodule.MyObject__": {"foo": 23}}
+.. code:: python
 
-   print(myobj.toJSON(includeclass=False))
-   # => { "foo": 23 }
+   # These raise ValueError
+   MyObject.newFromJSON('{"foo":23, "bar":"plugh"}')
+   MyObject.newFromJSON('{"__class__": "__mymodule.MyOtherObject__", "foo":23}')
 
-If you want no munging or class verification at all, set class parameters:
+Class verification can be skipped by passing `verifyclass=False` to the loader.
+
+.. code:: python
+
+   myobj = MyObject.newFromJSON('{"foo":23, "bar":"plugh"}', verifyclass=False)
+
+
+If you want no munging or class verification at all, set the class parameters:
 
 .. code:: python
 
@@ -165,6 +150,6 @@ If you want no munging or class verification at all, set class parameters:
        bar = Attr(isa=str).strip()
 
    # No extra class info due to modified defaults:
-   myobj = MyObject.newFromJSON('{"foo":"23", "bar":" plugh  "}')
+   myobj = MyObject.newFromJSON('{"foo":"23", "bar":"plugh"}')
    print(myobj.toJSON())
    # => { "foo": 23, "bar": "plugh" }

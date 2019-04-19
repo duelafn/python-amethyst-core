@@ -23,8 +23,7 @@ SYNOPSIS
         # foo and bar will be automatically extracted from kwargs.
         # .other will not be serialized by .toJSON()
         def __init__(self, other=None, **kwargs):
-            # Note: We do not validate data passed to constructor by default
-            super().__init__(**self.validate_data(kwargs))
+            super().__init__(**kwargs)
             self.other = other
 
 
@@ -199,7 +198,7 @@ class Attr(object):
 
             def fset(obj, value):
                 obj.assert_mutable()
-                obj.dict[name] = value
+                obj.set(name, value)
 
             def fdel(obj):
                 obj.assert_mutable()
@@ -564,7 +563,7 @@ def amethyst_inflate(obj, inflator=None, maxdepth=None):
             for key in obj:
                 obj[key] = amethyst_inflate(obj[key], inflator, maxdepth=maxdepth)
 
-    elif isinstance(obj, list) and maxdepth is None or maxdepth >= 0:
+    elif isinstance(obj, list) and (maxdepth is None or maxdepth >= 0):
         for i, val in enumerate(obj):
             obj[i] = amethyst_inflate(val, inflator, maxdepth=maxdepth)
 
@@ -713,23 +712,25 @@ class Object(BaseObject):
         """
         super(Object, self).__init__()
         self._mutable_ = True
-        self.dict = kwargs
 
         # Special-case of single argument:
-        if len(args) == 1 and not kwargs:
-            data = args[0]
-            if isinstance(data, type(self)):
-                # - NOT A COPY! Primary case of Object(Object()) is
-                #   re-import by JSON Hook, thus we just need another view
-                #   of the same data (returning the same object would also
-                #   work, but I don't know how to do that, and isn't really
-                #   worth it).
-                #
-                # - Object already one of our type, no need to merge defaults
-                self.dict = data.dict
-                self._mutable_ = data._mutable_
-            else:
-                # Just a dict passed use standard load data method
+        if len(args) == 1 and not kwargs and isinstance(args[0], type(self)):
+            # - NOT A COPY! Primary case of Object(Object()) is
+            #   re-import by JSON Hook, thus we just need another view
+            #   of the same data (returning the same object would also
+            #   work, but I don't know how to do that, and isn't really
+            #   worth it).
+            #
+            # - Object already one of our type, no need to merge defaults
+            self.dict = args[0].dict
+            self._mutable_ = args[0]._mutable_
+
+        else:
+            self.dict = dict()
+            data = dict()
+            for d in args: data.update(d)
+            if kwargs: data.update(kwargs)
+            if data:
                 self.load_data(data, verifyclass=False)
 
         for name, attr in six.iteritems(self._attrs):
@@ -791,11 +792,9 @@ class Object(BaseObject):
         """ """
         return self.dict[key]
     def __setitem__(self, key, value):
-        """
-        .. warning:: Bypasses validation!
-        """
+        """ """
         self.assert_mutable()
-        self.dict[key] = value
+        self.set(key, value)
     def __delitem__(self, key):
         """ """
         self.assert_mutable()
@@ -816,7 +815,8 @@ class Object(BaseObject):
         self.assert_mutable()
         for i in range(0, len(args), 2):
             kwargs[args[i]] = args[i+1]
-        return self.dict.update(self.validate_update(kwargs))
+        self.dict.update(self.validate_update(kwargs))
+        return self
 
     def setdefault(self, key, value):
         """If missing a value, verify then set"""
@@ -825,21 +825,64 @@ class Object(BaseObject):
             self.set(key, value)
         return self.dict[key]
 
+    def direct_set(self, *args, **kwargs):
+        """
+        Set values BYPASSING VALIDATION but respecting mutability.
+        Positional args take precedence over kwargs. ::
+
+            obj.direct_set(key, val)
+            obj.direct_set(foo=val)
+        """
+        self.assert_mutable()
+        for i in range(0, len(args), 2):
+            kwargs[args[i]] = args[i+1]
+        self.dict.update(kwargs)
+        return self
+
     def pop(self, key, dflt=None):
         """ """
         self.assert_mutable()
         return self.dict.pop(key, dflt)
 
     def update(self, *args, **kwargs):
+        """ """
+        self.assert_mutable()
+        data = dict()
+        for d in args: data.update(d)
+        if kwargs: data.update(kwargs)
+        self.dict.update(self.validate_update(data))
+        return self
+
+    def direct_update(self, *args, **kwargs):
         """
-        .. warning:: Bypasses validation!
+        Update internal dictionary BYPASSING VALIDATION but respecting
+        mutability.
         """
         self.assert_mutable()
-        for d in args:
-            self.dict.update(d)
-        if kwargs:
-            self.dict.update(kwargs)
+        self.dict.update(*args, **kwargs)
         return self
+
+    def validate_update(self, d, import_strategy=None):
+        """
+        Convert and validate with the intention of updating only some of
+        the object's .dict values. Returns a new dictionary with
+        canonicalized values, but *does not initialize any missing keys
+        with attribute default values* (which distinguishes this from
+        :py:func:`validate_data`).
+
+        This method does not change the object. Pass the resulting dict to
+        the `.update()` method (or `.direct_update()` if you decide to accept
+        the changes.
+        """
+        strategy = coalesce(import_strategy, self.amethyst_import_strategy)
+        data = d.copy() if strategy == "sloppy" else dict()
+        for key, val in six.iteritems(d):
+            attr = self._attrs.get(key)
+            if attr is None and strategy == "strict":
+                raise ValueError("key {} not permitted in {} object".format(key, self._dundername))
+            elif attr is not None:
+                data[key] = attr(val, key)
+        return data
 
     def validate_data(self, d, import_strategy=None):
         """
@@ -875,27 +918,6 @@ class Object(BaseObject):
                 data[name] = attr.get_default()
         if keys:
             raise ValueError("keys {} not permitted in {} object".format(keys, self._dundername))
-        return data
-
-    def validate_update(self, d, import_strategy=None):
-        """
-        Convert and validate with the intention of updating only some of
-        the object's .dict values. Returns a new dictionary with
-        canonicalized values, but *does not initialize any missing keys
-        with attribute default values* (which distinguishes this from
-        :py:func:`validate_data`).
-
-        This method does not change the object. Pass the resulting dict to
-        the .update() method if you decide to accept the changes.
-        """
-        strategy = coalesce(import_strategy, self.amethyst_import_strategy)
-        data = d.copy() if strategy == "sloppy" else dict()
-        for key, val in six.iteritems(d):
-            attr = self._attrs.get(key)
-            if attr is None and strategy == "strict":
-                raise ValueError("key {} not permitted in {} object".format(key, self._dundername))
-            elif attr is not None:
-                data[key] = attr(val, key)
         return data
 
     def attr_value_ok(self, name, value):
@@ -1039,7 +1061,7 @@ class Object(BaseObject):
 
              * "flat" to produce a JSON string in the form::
 
-                { "__class__": "MyClass", ... obj.dict ... }
+                { "__class__": "__my.module.MyClass__", ... obj.dict ... }
 
              * "single-key" to produce a JSON string in the form::
 
@@ -1103,16 +1125,11 @@ class Object(BaseObject):
         """
         return amethyst_deflate(self.dict, self)
 
-    def inflate_data(self, obj):
+    @classmethod
+    def inflate_new(cls, obj):
         """
         Inflate a "dumb" structure to a structure of objects, the opposite
         of :py:func:`deflate_data()`. Allows inflation from arbitrary serialization
         tools, as long as they can produce dicts and lists.
-
-        Note that this method does not import the resulting structure into
-        the object. After inflation, create a new Object by passing the
-        inflated structure to a constructor or else call :py:func:`load_data()` or
-        call :py:func:`validate_update()` followed by :py:func:`update()` to replace or
-        update the values in an existing object.
         """
-        return amethyst_inflate(obj, self)
+        return cls(amethyst_inflate(obj, cls))
