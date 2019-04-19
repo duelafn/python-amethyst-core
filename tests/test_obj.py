@@ -15,12 +15,6 @@ class MyTest(unittest.TestCase):
         obj = Object()
         self.assertEqual(obj.dict, {}, "Initial object is empty")
 
-        with self.assertRaises(AttributeError, msg="Undeclared attrs raise AttributeError"):
-            obj.foo
-
-        with self.assertRaises(KeyError, msg="Missing keys raise KeyError"):
-            obj["foo"]
-
         self.assertEqual(len(obj), 0, "Empty length works")
 
         self.assertEqual(json.loads(obj.toJSON()), {"__class__": "__amethyst.core.obj.Object__"}, "Empty toJSON")
@@ -37,6 +31,59 @@ class MyTest(unittest.TestCase):
             obj.fromJSON('{}')
 
 
+    def test_overrides(self):
+        """
+        Some of our methods are explicitly allowed to be replaced. These
+        tests replace them with exceptions and verify that other method
+        calls don't accidentally call the overrides.
+        """
+        class ObjOver1(Object):
+            foo = Attr(int)
+            bar = Attr(isa=six.text_type).strip()
+            def croak(self, *args, **kwargs):
+                raise Exception("Bummer")
+            items = croak
+            keys = croak
+            values = croak
+            get = croak
+            set = croak
+            setdefault = croak
+            direct_set = croak
+            pop = croak
+            update = croak
+            direct_update = croak
+            attr_value_ok = croak
+            load_data = croak
+            deflate_data = croak
+            inflate_new = croak
+
+        myobj = ObjOver1(foo=23)
+
+        with six.assertRaisesRegex(self, Exception, r'Bummer'):
+            myobj.items()
+
+        myobj.other = 15
+        self.assertEqual(myobj.other, 15)
+        self.assertEqual(myobj.bar, None)
+        self.assertEqual(len(myobj), 1)
+        self.assertTrue("foo" in myobj)
+        self.assertEqual(myobj.foo, 23)
+        self.assertEqual(myobj['foo'], 23)
+        del myobj['foo']
+        self.assertEqual(myobj.foo, None)
+        myobj.foo = 24
+        self.assertEqual(myobj.foo, 24)
+        myobj['foo'] = 25
+        self.assertEqual(myobj.foo, 25)
+        myobj.amethyst_validate_update(dict(foo=26))
+        myobj.amethyst_validate_data(dict(foo=27))
+        myobj.amethyst_load_data(dict(foo=28), verifyclass=False)
+        self.assertEqual(myobj.foo, 28)
+        self.assertNotEqual(myobj.toJSON(), '')
+        myobj.fromJSON('{"foo":"29"}', verifyclass=False)
+        self.assertEqual(myobj.foo, 29)
+
+
     def test_other_attrs(self):
         """Other attributes explicitly allowed and are not stored in data hash"""
         class ObjOther(Object):
@@ -51,6 +98,8 @@ class MyTest(unittest.TestCase):
 
         with self.assertRaises(AttributeError, msg="Getattr raises exception for names undeclared attrs"):
             myobj.undefined
+        with self.assertRaises(KeyError, msg="Getitem raises exception for names undeclared attrs"):
+            myobj['undefined']
         with self.assertRaises(KeyError):
             myobj['undefined'] = 42
         with self.assertRaises(KeyError):
@@ -201,7 +250,7 @@ class MyTest(unittest.TestCase):
         myobj = ObjSer1.newFromJSON('{"__class__": "__test_obj.ObjSer1__", "foo":23}')
         self.assertEqual(myobj.foo, 23)
 
-        with six.assertRaisesRegex(self, ValueError, r'expected __test_obj\.ObjSer1__'):
+        with six.assertRaisesRegex(self, ValueError, r'should be __test_obj\.ObjSer1__'):
             ObjSer1.newFromJSON('{"foo":23, "bar":"plugh"}')
         with six.assertRaisesRegex(self, ValueError, r'expected __test_obj\.ObjSer1__'):
             ObjSer1.newFromJSON('{"__class__": "__test_obj.ObjSer2__", "foo":23}')
@@ -229,18 +278,18 @@ class MyTest(unittest.TestCase):
             bip = Attr(float)
         obj = ObjIm()
 
-        obj.make_immutable()
-        self.assertFalse(obj.is_mutable(), "is not mutable")
+        obj.amethyst_make_immutable()
+        self.assertFalse(obj.amethyst_is_mutable(), "is not mutable")
 
         with self.assertRaises(ImmutableObjectException, msg="Can't set fields when immutable"):
             obj["foo"] = 23
 
-        self.assertIs(obj.make_mutable(), obj, "make_mutable returns self")
-        self.assertTrue(obj.is_mutable(), "is mutable")
+        self.assertIs(obj.amethyst_make_mutable(), obj, "make_mutable returns self")
+        self.assertTrue(obj.amethyst_is_mutable(), "is mutable")
         obj["bar"] = 23
 
-        self.assertIs(obj.make_immutable(), obj, "make_mutable returns self")
-        self.assertFalse(obj.is_mutable(), "is not mutable")
+        self.assertIs(obj.amethyst_make_immutable(), obj, "make_mutable returns self")
+        self.assertFalse(obj.amethyst_is_mutable(), "is not mutable")
 
         self.assertEqual(obj["bar"], 23, "Can read values when immutable")
 
@@ -261,7 +310,7 @@ class MyTest(unittest.TestCase):
 
         self.assertEqual(obj.dict, {"foo": 23, "bar": 12}, "No autovivification")
 
-        obj.make_immutable()
+        obj.amethyst_make_immutable()
         self.assertIsNone(obj.bip, "Can read non-existant keys when immutable")
 
         obj = Object()

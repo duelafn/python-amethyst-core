@@ -197,11 +197,10 @@ class Attr(object):
                 return None
 
             def fset(obj, value):
-                obj.assert_mutable()
-                obj.set(name, value)
+                obj[name] = value  # asserts mutability
 
             def fdel(obj):
-                obj.assert_mutable()
+                obj.amethyst_assert_mutable()
                 del obj.dict[name]
 
             return property(fget, fset, fdel, self.doc)
@@ -597,7 +596,7 @@ class AttrsMetaclass(type):
             register_amethyst_type(
                 new_cls,
                 encode    = (lambda obj: obj.dict),
-                decode    = (lambda obj: new_cls().load_data(obj, verifyclass=False)),
+                decode    = (lambda obj: new_cls().amethyst_load_data(obj, verifyclass=False)),
                 overwrite = False
             )
 
@@ -676,14 +675,14 @@ class Object(BaseObject):
     amethyst_verifyclass   = True
     """
     When True (the default), loading data from JSON or a dict passed to
-    :py:func:`load_data()` will check for the "__class__" key described above, and
+    :py:func:`amethyst_load_data()` will check for the "__class__" key described above, and
     an exception will be thrown if it is not found.
     """
 
     amethyst_import_strategy = "strict"
     """
     When "strict" (the default), then loading data from JSON or a
-    dictionary via :py:func:`load_data()` requires all keys present in the data
+    dictionary via :py:func:`amethyst_load_data()` requires all keys present in the data
     structure to correspond with keys in the attribute list. If any
     additional keys are present, an exception will be raised. When "loose",
     additional keys will be ignored and not copied into the object
@@ -703,7 +702,7 @@ class Object(BaseObject):
         argument and NO keyword arguments. This situation is intended for
         use with attribute verification. Exact behavior may change, but it
         is not expected to. Such a dictionary will simply be passed to
-        :py:func:`load_data()`.
+        :py:func:`amethyst_load_data()`.
 
         .. warning::
            Passing a single value to the constructor which is NOT a
@@ -711,7 +710,7 @@ class Object(BaseObject):
            likely to change.
         """
         super(Object, self).__init__()
-        self._mutable_ = True
+        self._amethyst_mutable_ = True
 
         # Special-case of single argument:
         if len(args) == 1 and not kwargs and isinstance(args[0], type(self)):
@@ -723,7 +722,7 @@ class Object(BaseObject):
             #
             # - Object already one of our type, no need to merge defaults
             self.dict = args[0].dict
-            self._mutable_ = args[0]._mutable_
+            self._amethyst_mutable_ = args[0]._amethyst_mutable_
 
         else:
             self.dict = dict()
@@ -731,28 +730,28 @@ class Object(BaseObject):
             for d in args: data.update(d)
             if kwargs: data.update(kwargs)
             if data:
-                self.load_data(data, verifyclass=False)
+                self.amethyst_load_data(data, verifyclass=False)
 
         for name, attr in six.iteritems(self._attrs):
             if attr.default is not None and name not in self.dict:
                 self.dict[name] = attr.get_default()
 
-    def assert_mutable(self, msg="May not modify, object is immutable"):
+    def amethyst_assert_mutable(self, msg="May not modify, object is immutable"):
         """ """
-        if not self._mutable_:
+        if not self._amethyst_mutable_:
             raise ImmutableObjectException(msg)
         return self
 
-    def is_mutable(self):
+    def amethyst_is_mutable(self):
         """ """
-        return self._mutable_
-    def make_mutable(self):
+        return self._amethyst_mutable_
+    def amethyst_make_mutable(self):
         """ """
-        self._mutable_ = True
+        self._amethyst_mutable_ = True
         return self
-    def make_immutable(self):
+    def amethyst_make_immutable(self):
         """ """
-        self._mutable_ = False
+        self._amethyst_mutable_ = False
         return self
 
     def __str__(self):
@@ -772,18 +771,24 @@ class Object(BaseObject):
 
 
     def items(self, **kwargs):
-        """ """
+        """
+        Subclasses: this method may be overridden with an unrelated implementation.
+        """
         for name, attr in six.iteritems(self._attrs):
             if name in self.dict:
                 yield name, self.dict[name]
     iteritems = items
     def keys(self, **kwargs):
-        """ """
+        """
+        Subclasses: this method may be overridden with an unrelated implementation.
+        """
         for name, attr in six.iteritems(self._attrs):
             if name in self.dict:
                 yield name
     def values(self, **kwargs):
-        """ """
+        """
+        Subclasses: this method may be overridden with an unrelated implementation.
+        """
         for name, attr in six.iteritems(self._attrs):
             if name in self.dict:
                 yield self.dict[name]
@@ -793,15 +798,23 @@ class Object(BaseObject):
         return self.dict[key]
     def __setitem__(self, key, value):
         """ """
-        self.assert_mutable()
-        self.set(key, value)
+        self.amethyst_assert_mutable()
+        attr = self._attrs.get(key)
+        if attr is not None:
+            self.dict[key] = attr(value, key)
+        elif self.amethyst_import_strategy == "strict":
+            raise KeyError("key {} not permitted in {} object".format(key, self._dundername))
+        elif self.amethyst_import_strategy == "sloppy":
+            self.dict[key] = value
     def __delitem__(self, key):
         """ """
-        self.assert_mutable()
+        self.amethyst_assert_mutable()
         del self.dict[key]
 
     def get(self, key, dflt=None):
-        """ """
+        """
+        Subclasses: this method may be overridden with an unrelated implementation.
+        """
         return self.dict.get(key, dflt)
 
     def set(self, *args, **kwargs):
@@ -811,16 +824,25 @@ class Object(BaseObject):
 
             obj.set(key, val)
             obj.set(foo=val)
+
+        Subclasses: this method may be overridden with an unrelated implementation.
         """
-        self.assert_mutable()
+        if 2 == len(args) and not kwargs:
+            self[args[0]] = args[1]
+            return self
+        self.amethyst_assert_mutable()
         for i in range(0, len(args), 2):
             kwargs[args[i]] = args[i+1]
-        self.dict.update(self.validate_update(kwargs))
+        self.dict.update(self.amethyst_validate_update(kwargs))
         return self
 
     def setdefault(self, key, value):
-        """If missing a value, verify then set"""
-        self.assert_mutable()
+        """
+        If missing a value, verify then set
+
+        Subclasses: this method may be overridden with an unrelated implementation.
+        """
+        self.amethyst_assert_mutable()
         if key not in self.dict:
             self.set(key, value)
         return self.dict[key]
@@ -832,43 +854,51 @@ class Object(BaseObject):
 
             obj.direct_set(key, val)
             obj.direct_set(foo=val)
+
+        Subclasses: this method may be overridden with an unrelated implementation.
         """
-        self.assert_mutable()
+        self.amethyst_assert_mutable()
         for i in range(0, len(args), 2):
             kwargs[args[i]] = args[i+1]
         self.dict.update(kwargs)
         return self
 
     def pop(self, key, dflt=None):
-        """ """
-        self.assert_mutable()
+        """
+        Subclasses: this method may be overridden with an unrelated implementation.
+        """
+        self.amethyst_assert_mutable()
         return self.dict.pop(key, dflt)
 
     def update(self, *args, **kwargs):
-        """ """
-        self.assert_mutable()
+        """
+        Subclasses: this method may be overridden with an unrelated implementation.
+        """
+        self.amethyst_assert_mutable()
         data = dict()
         for d in args: data.update(d)
         if kwargs: data.update(kwargs)
-        self.dict.update(self.validate_update(data))
+        self.dict.update(self.amethyst_validate_update(data))
         return self
 
     def direct_update(self, *args, **kwargs):
         """
         Update internal dictionary BYPASSING VALIDATION but respecting
         mutability.
+
+        Subclasses: this method may be overridden with an unrelated implementation.
         """
-        self.assert_mutable()
+        self.amethyst_assert_mutable()
         self.dict.update(*args, **kwargs)
         return self
 
-    def validate_update(self, d, import_strategy=None):
+    def amethyst_validate_update(self, d, import_strategy=None):
         """
         Convert and validate with the intention of updating only some of
         the object's .dict values. Returns a new dictionary with
         canonicalized values, but *does not initialize any missing keys
         with attribute default values* (which distinguishes this from
-        :py:func:`validate_data`).
+        :py:func:`amethyst_validate_data`).
 
         This method does not change the object. Pass the resulting dict to
         the `.update()` method (or `.direct_update()` if you decide to accept
@@ -884,28 +914,28 @@ class Object(BaseObject):
                 data[key] = attr(val, key)
         return data
 
-    def validate_data(self, d, import_strategy=None):
+    def amethyst_validate_data(self, d, import_strategy=None):
         """
         Convert and validate with the intention of replacing all of the
         object's .dict values. Returns a new dictionary with canonicalized
         values, *and defaults inserted* (which distinguishes this from
-        :py:func:`validate_update`).
+        :py:func:`amethyst_validate_update`).
 
         This method does not change the object. Typical usage would look
         like either::
 
-            myobj.dict = myobj.validate_data(data)
+            myobj.dict = myobj.amethyst_validate_data(data)
 
         or ::
 
-            validated = myobj.validate_data(data)
+            validated = myobj.amethyst_validate_data(data)
             mynewobj = MyClass(**validated)
 
-        Subclasses of :py:class:`Object` can also use this method to inflate specific
-        attibutes at load time. For instance, to inflate non-Object
-        objects or ensure objects from hand-written config files. Be sure to
-        override :py:func:`validate_update` as well if programmatic updates may need
-        special inflation rules.
+        Subclasses of :py:class:`Object` can also use this method to
+        inflate specific attibutes at load time. For instance, to inflate
+        non-Object objects or ensure objects from hand-written config
+        files. Be sure to override :py:func:`amethyst_validate_update` as
+        well if programmatic updates may need special inflation rules.
         """
         strategy = coalesce(import_strategy, self.amethyst_import_strategy)
         data = d.copy() if strategy == "sloppy" else dict()
@@ -924,6 +954,8 @@ class Object(BaseObject):
         """
         Validate a single value independently of any others. Just checks
         that the attribute validator does not raise an exception.
+
+        Subclasses: this method may be overridden with an unrelated implementation.
         """
         if name in self._attrs:
             try:
@@ -933,7 +965,7 @@ class Object(BaseObject):
                 return False
         return False
 
-    def load_data(self, data, import_strategy=None, verifyclass=None):
+    def amethyst_load_data(self, data, import_strategy=None, verifyclass=None):
         """
         Loads a data dictionary with validation. Modifies the passed dict
         and replaces current self.dict object with the one passed.
@@ -952,7 +984,7 @@ class Object(BaseObject):
         True, so, by default, at least one of the class identification keys
         is expected to be present.
         """
-        self.assert_mutable()
+        self.amethyst_assert_mutable()
         verifyclass = coalesce(verifyclass, self.amethyst_verifyclass)
 
         # We only deal in dicts here
@@ -980,12 +1012,21 @@ class Object(BaseObject):
         # broken. Once we do verify the class, remove it from the dict to
         # make key iteration safe.
         if verifyclass and data.get("__class__") != self._dundername:
-            raise ValueError("got {} object, but expected {}".format(data.get("__class__"), self._dundername))
+            if data.get("__class__") is None:
+                raise ValueError("Error validating import data class: __class__ key missing but should be {} (or set verifyclass=False)".format(self._dundername))
+            else:
+                raise ValueError("Error validating import data class: got {} object, but expected {}".format(data.get("__class__"), self._dundername))
         data.pop("__class__", None)
 
         # Run the validator
-        self.dict = self.validate_data(data, import_strategy=import_strategy)
+        self.dict = self.amethyst_validate_data(data, import_strategy=import_strategy)
         return self
+    load_data = amethyst_load_data
+    """
+    Alias for amethyst_load_data
+
+    Subclasses: this method may be overridden with an unrelated implementation.
+    """
 
     def JSONEncoder(self, obj):
         """
@@ -1095,10 +1136,10 @@ class Object(BaseObject):
     def newFromJSON(cls, source, import_strategy=None, verifyclass=None, **kwargs):
         """ """
         self = cls()
-        mutable = self.is_mutable()# In case some subclass is default immutable
-        if not mutable: self.make_mutable()
+        mutable = self.amethyst_is_mutable()# In case some subclass is default immutable
+        if not mutable: self.amethyst_make_mutable()
         self.fromJSON(source, import_strategy=import_strategy, verifyclass=verifyclass, **kwargs)
-        if not mutable: self.make_immutable()
+        if not mutable: self.amethyst_make_immutable()
         return self
 
     def fromJSON(self, source, import_strategy=None, verifyclass=None, **kwargs):
@@ -1114,7 +1155,7 @@ class Object(BaseObject):
             data = json.loads(source, **kwargs)
         else:
             data = json.load(source, **kwargs)
-        return self.load_data(data, import_strategy=import_strategy, verifyclass=verifyclass)
+        return self.amethyst_load_data(data, import_strategy=import_strategy, verifyclass=verifyclass)
 
     def deflate_data(self):
         """
@@ -1122,6 +1163,8 @@ class Object(BaseObject):
         numbers, and strings. The deflated structure should be easily
         serializable by most any reasonable serialization library (yaml,
         lxml, ...)
+
+        Subclasses: this method may be overridden with an unrelated implementation.
         """
         return amethyst_deflate(self.dict, self)
 
@@ -1131,5 +1174,7 @@ class Object(BaseObject):
         Inflate a "dumb" structure to a structure of objects, the opposite
         of :py:func:`deflate_data()`. Allows inflation from arbitrary serialization
         tools, as long as they can produce dicts and lists.
+
+        Subclasses: this method may be overridden with an unrelated implementation.
         """
         return cls(amethyst_inflate(obj, cls))
