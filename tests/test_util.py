@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division, absolute_import, print_function, unicode_literals
+import six.moves
+import threading
 import unittest
 
 from amethyst.core import cached_property, coalesce
@@ -9,6 +11,8 @@ from amethyst.core import cached_property, coalesce
 class Foo(object):
     def __init__(self, bar=None):
         self.computed = 0
+        self.errors = []
+        self.local = threading.local()
         if bar is not None:
             self.bar = bar
 
@@ -16,6 +20,11 @@ class Foo(object):
     def bar(self):
         self.computed += 1
         return 42
+
+    @cached_property(delegate="local")
+    def baz(self):
+        self.computed += 1
+        return six.moves._thread.get_ident()
 
 
 class MyTest(unittest.TestCase):
@@ -29,30 +38,73 @@ class MyTest(unittest.TestCase):
         self.assertEqual(coalesce(None, 0, None, None), 0, "Match zero")
         self.assertFalse(coalesce(None, False, None, None), "Match falsey")
 
+    def _thread_test_cached_property(self, foo, ident, computed):
+        # runs in thread, so have to save any exceptions to throw later
+        try:
+            self.assertEqual(foo.computed, computed)
+            self.assertNotEqual(foo.baz, ident)
+            self.assertEqual(foo.computed, computed + 1)
+            self.assertNotEqual(foo.baz, ident)
+            self.assertEqual(foo.computed, computed + 1)
+            foo.thread_ok = True
+        except Exception as err:
+            foo.errors.append(err)
+
     def test_cached_property(self):
         foo = Foo()
+        computed = 0
 
-        self.assertEqual(foo.computed, 0, "Not calculated yet")
+        self.assertEqual(foo.computed, computed, "Not calculated yet")
+        computed += 1
         self.assertEqual(foo.bar, 42, "Computed")
-        self.assertEqual(foo.computed, 1, "Calculated once")
+        self.assertEqual(foo.computed, computed, "Calculated once")
         self.assertEqual(foo.bar, 42, "Cached")
-        self.assertEqual(foo.computed, 1, "Calculated once (still)")
+        self.assertEqual(foo.computed, computed, "Calculated once (still)")
 
         foo.bar = 12
         self.assertEqual(foo.bar, 12, "Assigned")
-        self.assertEqual(foo.computed, 1, "Calculated once (still)")
+        self.assertEqual(foo.computed, computed, "Calculated once (still)")
 
         del foo.bar
+        computed += 1
         self.assertEqual(foo.bar, 42, "Recomputed")
-        self.assertEqual(foo.computed, 2, "Calculated twice")
+        self.assertEqual(foo.computed, computed, "Calculated twice")
 
         foo = Foo(bar=12)
+        computed = 0
         self.assertEqual(foo.bar, 12, "Assigned")
-        self.assertEqual(foo.computed, 0, "Never calculated")
+        self.assertEqual(foo.computed, computed, "Never calculated")
 
         del foo.bar
+        computed += 1
         self.assertEqual(foo.bar, 42, "Cleared / Computed")
-        self.assertEqual(foo.computed, 1, "Calculated finally")
+        self.assertEqual(foo.computed, computed, "Calculated finally")
+
+        # threading
+        computed += 1
+        ident = foo.baz
+        self.assertTrue(bool(ident))
+        self.assertEqual(foo.computed, computed)
+        self.assertEqual(foo.baz, ident)
+        self.assertEqual(foo.computed, computed)
+        self.assertEqual(foo.local.baz, ident, msg="Written to correct attribute")
+
+        computed += 1
+        del foo.baz
+        self.assertEqual(foo.baz, ident)
+        self.assertEqual(foo.computed, computed)
+
+        thr = threading.Thread(target=self._thread_test_cached_property, args=(foo, ident, computed))
+        thr.start()
+        thr.join()
+        for err in foo.errors:
+            raise err
+        self.assertTrue(foo.thread_ok) # Extra-paranoid check
+        computed += 1                  # incremented in thread
+
+        # Unchanged in this thread
+        self.assertEqual(foo.baz, ident)
+        self.assertEqual(foo.computed, computed)
 
 
 if __name__ == '__main__':

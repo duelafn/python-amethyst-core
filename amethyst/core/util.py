@@ -93,8 +93,8 @@ class cached_property(object):
     Creates properties with deferred calculation. Once calculated, the
     result is stored and returned from cache on subsequent access. Useful
     for expensive operations which may not be needed, or to ensure
-    just-in-time construction (I like using this for subwidget construction
-    in GUI classes, see example below).
+    just-in-time construction (I like using this for database connections
+    or building subwidgets in GUI classes, see examples below).
 
     Decorator Usage (most common)::
 
@@ -126,7 +126,27 @@ class cached_property(object):
                 self.bar = cached_property(expensive_calculation, "bar")
 
 
-    Example GUI use::
+    Example: Automatic, thread-safe, database connections::
+
+        import threading
+        import sqlite3
+        from amethyst.core import cached_property
+
+        class MyObject(object):
+            def __init__(self, **kwargs):
+                self._thr_local = threading.local()
+
+            @cached_property(delegate="_thr_local")
+            def db(self):
+                conn = sqlite3.connect("mydb.sqlite3")
+                conn.execute("PRAGMA foreign_keys=ON")
+                return conn
+
+        # obj.db will be a different connection in each thread
+        # and will only connect if used in the thread
+
+
+    Example: GUI widget building::
 
         import wx
         from amethyst.core import cached_property as widget
@@ -135,7 +155,6 @@ class cached_property(object):
             def __init__(self, *args, **kwargs):
                 super(SimpleWindow, self).__init__(*args, **kwargs)
                 self.sizer.Add(self.button1)
-                self.sizer.Add(self.button2)
                 self.sizer.Add(self.button_exit)
 
             @widget
@@ -151,12 +170,6 @@ class cached_property(object):
                 return widget
 
             @widget
-            def button2(self):
-                widget = wx.Button(self, wx.ID_ANY, "Do Something Else")
-                widget.Bind(wx.EVT_BUTTON, self.on_click2)
-                return widget
-
-            @widget
             def button_exit(self):
                 widget = wx.Button(self, wx.ID_ANY, "Exit")
                 widget.Bind(wx.EVT_BUTTON, lambda evt: wx.Exit())
@@ -164,9 +177,6 @@ class cached_property(object):
 
             def on_click1(self, evt):
                 print("Ouch!")
-
-            def on_click2(self, evt):
-                print("Ouch again!")
 
         class MyApp(wx.App):
             def OnInit(self):
@@ -180,10 +190,34 @@ class cached_property(object):
 
         app = MyApp(0)
         app.MainLoop()
-
     """
-    def __init__(self, meth=None, name=None):
+    def __init__(self, meth=None, name=None, delegate=None):
+        """
+        :param meth: The method being decorated. Typically not passed to
+           the constructor explicitly, see examples.
+
+        :param name: Key name to use in object dict (or delegate attribute
+           name). Automatically extracted from decorated method name if not
+           specified.
+
+        :param delegate: Attribute name containing an object to delegate
+           storage to. If not `None`, the `name` attribute of `delegate`
+           will be accessed (via `getattr`, `setattr`, and `delattr`) when
+           determining whether to recompute the cached property and to
+           store the computed property value (see example).
+        """
         self.name = name
+        self.delegate = delegate
+        # Simplify implementations by just coding different methods.
+        # Python name mangling prevents setting self.__xxx__ directly.
+        if delegate:
+            self._get = self.get_delegate
+            self._set = self.set_delegate
+            self._del = self.del_delegate
+        else:
+            self._get = self.get_obj_dict
+            self._set = self.set_obj_dict
+            self._del = self.del_obj_dict
         if meth is not None:
             self(meth)
 
@@ -194,13 +228,38 @@ class cached_property(object):
         return self
 
     def __get__(self, obj, typ=None):
+        return self._get(obj, typ)
+    def __set__(self, obj, value):
+        self._set(obj, value)
+    def __delete__(self, obj):
+        self._del(obj)
+
+    # object-dict storage
+    def get_obj_dict(self, obj, typ=None):
         if self.name not in obj.__dict__:
             obj.__dict__[self.name] = self.meth(obj)
         return obj.__dict__[self.name]
 
-    def __set__(self, obj, value):
+    def set_obj_dict(self, obj, value):
         obj.__dict__[self.name] = value
 
-    def __delete__(self, obj):
+    def del_obj_dict(self, obj):
         if self.name in obj.__dict__:
             del obj.__dict__[self.name]
+
+    # delegate storage
+    def get_delegate(self, obj, typ=None):
+        delegate = getattr(obj, self.delegate)
+        try:
+            return getattr(delegate, self.name)
+        except AttributeError:
+            pass
+        rv = self.meth(obj)
+        setattr(delegate, self.name, rv)
+        return rv
+
+    def set_delegate(self, obj, value):
+        setattr(getattr(obj, self.delegate), self.name, value)
+
+    def del_delegate(self, obj):
+        delattr(getattr(obj, self.delegate), self.name)

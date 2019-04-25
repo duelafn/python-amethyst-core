@@ -14,8 +14,10 @@ class MyTest(unittest.TestCase):
     def test_ttobject(self):
         obj = Object()
         self.assertEqual(obj.dict, {}, "Initial object is empty")
-
         self.assertEqual(len(obj), 0, "Empty length works")
+
+        obj = Object({})
+        self.assertEqual(obj.dict, {}, "Initial object is empty")
 
         self.assertEqual(json.loads(obj.toJSON()), {"__class__": "__amethyst.core.obj.Object__"}, "Empty toJSON")
 
