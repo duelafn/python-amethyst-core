@@ -56,9 +56,6 @@ publish-test:
 
 publish:
 	python3 -m twine upload --repository pypi dist/${PKG_VERSION}/*.whl ${VSDIST_TAR_GZ}
-	@echo "TODO:"
-	@echo "  git tag -s v${PKG_VERSION} -m '${PKGNAME} ${PKG_VERSION}'"
-	@echo "  git push origin v${PKG_VERSION}"
 
 sdist: test
 	python3 setup.py sdist
