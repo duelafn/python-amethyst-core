@@ -1,8 +1,13 @@
 
-amethyst-core 0.7.0
+amethyst-core 0.7.0 released 2019-04-29
 
   * INCOMPATIBLE: Always validate attributes except when using
     .direct_set() and .direct_update() methods
+  * INCOMPATIBLE: Strict validation raises KeyError not ValueError
+    if passed an absent key name.
+  * INCOMPATIBLE: Prefix critical methods with amethyst_. Explicitly
+    document (and test) other methods as overridable by subclasses.
+  * cached_property: new "delegate" kwarg to delegate storage to an attribute
 
 amethyst-core 0.6.4 release 2019-03-22
 
