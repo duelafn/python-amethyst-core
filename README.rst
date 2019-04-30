@@ -153,3 +153,26 @@ If you want no munging or class verification at all, set the class parameters:
    myobj = MyObject.newFromJSON('{"foo":"23", "bar":"plugh"}')
    print(myobj.toJSON())
    # => { "foo": 23, "bar": "plugh" }
+
+
+Ecosystem integration
+---------------------
+
+Works with `sqlite3.Row` objects:
+
+.. code:: python
+
+    import sqlite3
+    conn = sqlite3.connect(myfile)
+    conn.row_factory = sqlite3.Row
+    for row in conn.execute('SELECT * FROM mytable')
+        obj = MyObject(row)
+        ...
+
+Works with `six.iteritems()`:
+
+.. code:: python
+
+    import six
+    for k, v in six.iteritems(myobj):
+        ...

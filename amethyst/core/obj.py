@@ -686,16 +686,10 @@ class Object(BaseObject):
         Initializes self.dict with all passed kwargs.
         Object is mutable by default.
 
-        As a special case, Object may be initialized by a single dictionary
-        argument and NO keyword arguments. This situation is intended for
-        use with attribute verification. Exact behavior may change, but it
-        is not expected to. Such a dictionary will simply be passed to
-        :py:func:`amethyst_load_data()`.
-
         .. warning::
-           Passing a single value to the constructor which is NOT a
-           dictionary object is reserved for internal use only and behavior is
-           likely to change.
+           Passing a single argument that is an instance of the class
+           itself is reserved for internal use only and behavior is likely
+           to change.
         """
         super(Object, self).__init__()
         self._amethyst_mutable_ = True

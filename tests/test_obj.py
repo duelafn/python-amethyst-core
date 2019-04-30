@@ -8,8 +8,10 @@ import unittest
 import json
 import marshal
 import six
-from amethyst.core import Object, Attr
+import sqlite3
+
 from amethyst.core import ImmutableObjectException, DuplicateAttributeException
+from amethyst.core import Object, Attr
 
 class MyTest(unittest.TestCase):
     def test_ttobject(self):
@@ -380,12 +382,22 @@ class MyTest(unittest.TestCase):
 
 
     def test_integration(self):
+        """
+        Tests to ensure that we play well with other common libraries.
+
+        six:
+          - ensure that we can be passed to six.iteritems()
+
+        sqlite3:
+          - ensure that sqlite3.Row objects can be used to initialize objects
+        """
         class Obj5(Object):
             foo = Attr(int)
             bar = Attr()
             baz = Attr(float)
-            bip = Attr(float)
+            bip = Attr()
 
+        # six.iteritems(obj)
         try:
             import six
             obj = Obj5(foo=12, bar="hi", baz=2.3)
@@ -396,6 +408,18 @@ class MyTest(unittest.TestCase):
 
         except ImportError:
             raise unittest.SkipTest("six not installed, skipping six integration tests")
+
+        # Object(sqlite3.Row)
+        conn = sqlite3.connect(":memory:")
+        conn.row_factory = sqlite3.Row
+        conn.execute("CREATE TABLE test (foo INTEGER, bar TEXT, baz TEXT, bip TEXT)")
+        conn.execute("INSERT INTO test VALUES (74, 'plugh', '12.5', NULL)")
+
+        obj = Obj5(conn.execute('SELECT * FROM test').fetchone())
+        self.assertEqual(obj.foo, 74)
+        self.assertEqual(obj.bar, "plugh")
+        self.assertEqual(obj.baz, 12.5)
+        self.assertEqual(obj.bip, None)
 
 
 if __name__ == '__main__':
