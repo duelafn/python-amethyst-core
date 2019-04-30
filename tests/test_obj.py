@@ -43,8 +43,10 @@ class MyTest(unittest.TestCase):
         class ObjOver1(Object):
             foo = Attr(int)
             bar = Attr(isa=six.text_type).strip()
+
             def croak(self, *args, **kwargs):
                 raise Exception("Bummer")
+
             items = croak
             keys = croak
             values = croak
