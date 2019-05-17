@@ -10,6 +10,7 @@ import marshal
 import six
 import sqlite3
 
+import amethyst.core.obj
 from amethyst.core import ImmutableObjectException, DuplicateAttributeException
 from amethyst.core import Object, Attr
 
@@ -34,6 +35,51 @@ class MyTest(unittest.TestCase):
 
         with self.assertRaises(ValueError, msg="Invalid if __class__ is missing"):
             obj.fromJSON('{}')
+
+        self.assertFalse(amethyst.core.obj.UNIQUE1 == amethyst.core.obj.UNIQUE2)
+        self.assertTrue( amethyst.core.obj.UNIQUE1 != amethyst.core.obj.UNIQUE2)
+
+        class ObjA(Object):
+            foo = Attr(int)
+            bar = Attr(isa=six.text_type).strip()
+
+        class ObjB(Object):
+            foo = Attr(int)
+            bar = Attr(isa=six.text_type).strip()
+
+        a = ObjA(foo=23, bar="plugh")
+        b = ObjB(foo=23, bar="plugh")
+        self.assertFalse(a == b)
+        self.assertTrue( a != b)
+
+        a1 = ObjA(foo=23, bar="plugh")
+        a2 = ObjA(foo=23, bar="plugh")
+        self.assertTrue( a1 == a2)
+        self.assertFalse(a1 != a2)
+
+        a1 = ObjA(foo=23, bar="plugh")
+        a2 = ObjA(foo=23, bar="barf")
+        self.assertFalse(a1 == a2)
+
+        a1 = ObjA(foo=23, bar="plugh")
+        a2 = ObjA(bar="plugh")
+        self.assertFalse(a1 == a2)
+
+        a1 = ObjA(foo=23, bar="plugh")
+        a2 = ObjA()
+        self.assertFalse(a1 == a2)
+
+        a1 = ObjA()
+        a2 = ObjA(foo=23, bar="plugh")
+        self.assertFalse(a1 == a2)
+
+        a1 = ObjA()
+        a2 = ObjA()
+        self.assertTrue(a1 == a2)
+
+        a1 = ObjA(foo=24)
+        a2 = ObjA(foo=24)
+        self.assertTrue(a1 == a2)
 
 
     def test_overrides(self):

@@ -617,6 +617,8 @@ BaseObject = AttrsMetaclass(str('BaseObject'), (), {
     "_jsonhooks": {},
 })
 
+UNIQUE1 = object()
+UNIQUE2 = object()
 
 class Object(BaseObject):
     """
@@ -751,6 +753,21 @@ class Object(BaseObject):
         """ """
         return iter(self.dict)
 
+    def __eq__(self, other):
+        """
+        Object equality. Tests all :py:func:`Attr()`s and only
+        :py:func:`Attr()`s. Other python properties or "garbage" in the
+        underlying dict (which may arise from "sloppy" imports) will be
+        ignored.
+        """
+        if not isinstance(other, self.__class__):
+            return False
+        for name, attr in six.iteritems(self._attrs):
+            if getattr(self, name, UNIQUE1) != getattr(other, name, UNIQUE2):
+                return False
+        return True
+    def __ne__(self, other):
+        return not (self == other)
 
     def items(self, **kwargs):
         """
