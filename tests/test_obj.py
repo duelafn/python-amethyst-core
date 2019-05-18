@@ -47,10 +47,22 @@ class MyTest(unittest.TestCase):
             foo = Attr(int)
             bar = Attr(isa=six.text_type).strip()
 
+        class ObjC(ObjA):
+            pass
+
         a = ObjA(foo=23, bar="plugh")
         b = ObjB(foo=23, bar="plugh")
         self.assertFalse(a == b)
+        self.assertFalse(b == a)
+        self.assertTrue( b != a)
         self.assertTrue( a != b)
+
+        a = ObjA(foo=23, bar="plugh")
+        c = ObjC(foo=23, bar="plugh")
+        self.assertFalse(a == c)
+        self.assertFalse(c == a)
+        self.assertTrue( c != a)
+        self.assertTrue( a != c)
 
         a1 = ObjA(foo=23, bar="plugh")
         a2 = ObjA(foo=23, bar="plugh")

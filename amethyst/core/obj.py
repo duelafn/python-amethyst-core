@@ -760,7 +760,7 @@ class Object(BaseObject):
         underlying dict (which may arise from "sloppy" imports) will be
         ignored.
         """
-        if not isinstance(other, self.__class__):
+        if self.__class__ != other.__class__:
             return False
         for name, attr in six.iteritems(self._attrs):
             if getattr(self, name, UNIQUE1) != getattr(other, name, UNIQUE2):
