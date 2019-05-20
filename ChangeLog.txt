@@ -1,4 +1,8 @@
 
+amethyst-core 0.7.1 released 2019-05-20
+
+  * Object: implement __eq__ and __ne__
+
 amethyst-core 0.7.0 released 2019-04-29
 
   * INCOMPATIBLE: Always validate attributes except when using
