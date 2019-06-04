@@ -585,7 +585,7 @@ class AttrsMetaclass(type):
             register_amethyst_type(
                 new_cls,
                 encode    = (lambda obj: obj.dict),
-                decode    = (lambda obj: new_cls().amethyst_load_data(obj, verifyclass=False)),
+                decode    = (lambda obj: new_cls(obj)),
                 overwrite = False
             )
 
