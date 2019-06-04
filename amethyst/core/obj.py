@@ -177,15 +177,16 @@ class Attr(object):
                 except KeyError:
                     # default happens before builder
                     if self.default is not None:
-                        obj.dict[name] = self.get_default()
+                        obj.dict[name] = self(self.get_default(), name)
                         return obj.dict[name]
                     if self.builder is not None:
-                        obj.dict[name] = self.builder()
+                        obj.dict[name] = self(self.builder(), name)
                         return obj.dict[name]
                 return None
 
             def fset(obj, value):
-                obj[name] = value  # asserts mutability
+                obj.amethyst_assert_mutable()
+                obj.dict[name] = self(value, name)
 
             def fdel(obj):
                 obj.amethyst_assert_mutable()
