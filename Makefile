@@ -49,8 +49,8 @@ sdist: test
 	python3 setup.py sdist
 
 test:
-	python2 -E -B setup.py nosetests >/dev/null
-	python3 -E -B setup.py nosetests >/dev/null
+	python  -E -B -m nose --with-coverage --verbosity=0 --cover-package=amethyst.core tests
+	python3 -E -B -m nose --with-coverage --verbosity=0 --cover-package=amethyst.core tests
 
 tox:
 	tox
