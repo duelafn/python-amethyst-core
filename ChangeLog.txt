@@ -1,47 +1,45 @@
 
-amethyst-core 0.7.1 released 2019-05-20
+amethyst-core 0.8.0 released 2019-06-07
+  - INCOMPATIBLE: Pass default values through validation/conversion
+  - Fix inflation of classes which set immutible flag in constructor
+  - modifiers (.strip(), and, <, ...) play well with subclassing
 
-  * Object: implement __eq__ and __ne__
+amethyst-core 0.7.1 released 2019-05-20
+  - Object: implement __eq__ and __ne__ (deep comparison of Attrs)
 
 amethyst-core 0.7.0 released 2019-04-29
-
-  * INCOMPATIBLE: Always validate attributes except when using
+  - INCOMPATIBLE: Always validate attributes except when using
     .direct_set() and .direct_update() methods
-  * INCOMPATIBLE: Strict validation raises KeyError not ValueError
+  - INCOMPATIBLE: Strict validation raises KeyError not ValueError
     if passed an absent key name.
-  * INCOMPATIBLE: Prefix critical methods with amethyst_. Explicitly
+  - INCOMPATIBLE: Prefix critical methods with amethyst_. Explicitly
     document (and test) other methods as overridable by subclasses.
-  * cached_property: new "delegate" kwarg to delegate storage to an attribute
+  - cached_property: new "delegate" kwarg to delegate storage to an attribute
 
 amethyst-core 0.6.4 release 2019-03-22
-
-  * documentation updates
-  * version bump for pypi release
+  - documentation updates
+  - version bump for pypi release
 
 amethyst-core 0.6.2 release 2019-02-08
-
-  * bugfix: error in using isinstance on bools in amethyst_deflate
-  * Object .keys(), .values(), .items(), .iteritems() to better impersonate dict()
+  - bugfix: error in using isinstance on bools in amethyst_deflate
+  - Object .keys(), .values(), .items(), .iteritems() to better impersonate dict()
 
 amethyst-core 0.6.1 release 2018-09-06
-
-  * Use Attr(OVERRIDE=True) to avoid DuplicateAttributeException
-  * Add class/attribute name to various error messages to aid in debugging
-  * Use register_amethyst_type(wrap_encode=False) to skip auto-wrapping
+  - Use Attr(OVERRIDE=True) to avoid DuplicateAttributeException
+  - Add class/attribute name to various error messages to aid in debugging
+  - Use register_amethyst_type(wrap_encode=False) to skip auto-wrapping
     encoded values in a dict (e.g., for plain string-encodable types)
-  * Attr copies .doc property when creating derived Attrs (e.g., using Attr.strip())
-  * fromJSON and newFromJSON accept file handles in addition to strings
-  * Split out functions amethyst_deflate and amethyst_inflate for external serialization
-  * More documentation
+  - Attr copies .doc property when creating derived Attrs (e.g., using Attr.strip())
+  - fromJSON and newFromJSON accept file handles in addition to strings
+  - Split out functions amethyst_deflate and amethyst_inflate for external serialization
+  - More documentation
 
 amethyst-core 0.6.0 released 2017-04-24
-
-  * INCOMPATIBLE: default amethyst_classhint_style is now "flat"
-  * INCOMPATIBLE: amethyst_strictkeys replaced with more general amethyst_import_strategy
-  * Attr `default` values immediately apply at object creation
-  * Object.set() can now take either positional key/value or kwargs
-  * remove pkgutil.extend_path fallback, use only pkg_resources.declare_namespace
+  - INCOMPATIBLE: default amethyst_classhint_style is now "flat"
+  - INCOMPATIBLE: amethyst_strictkeys replaced with more general amethyst_import_strategy
+  - Attr `default` values immediately apply at object creation
+  - Object.set() can now take either positional key/value or kwargs
+  - remove pkgutil.extend_path fallback, use only pkg_resources.declare_namespace
 
 amethyst-core 0.5.0 released 2016-12-01
-
-  * Initial release
+  - Initial release
