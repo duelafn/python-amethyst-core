@@ -34,7 +34,7 @@ class _Container(object):
 def list_of(conv, container=list, package=None, frame=1):
     """
     An :py:class:`amethyst.core.obj.Attr` helper function which will
-    validate a list of values. Sample usage:
+    validate a list of values. Sample usage::
 
         class MyObject(Object):
             foo = Attr(list_of(float))
@@ -91,7 +91,7 @@ def set_of(conv, package=None, frame=1):
 def dict_of(conv, key_conv=identity, set_key=None, package=None, frame=1):
     """
     An :py:class:`amethyst.core.obj.Attr` helper function which will
-    validate a dict of values and optionally keys. Sample usage:
+    validate a dict of values and optionally keys. Sample usage::
 
         class MyObject(Object):
             name = Attr()
@@ -100,13 +100,13 @@ def dict_of(conv, key_conv=identity, set_key=None, package=None, frame=1):
         obj1 = MyObject(name="Alice")
         obj2 = MyObject(foo={ "a": obj1, "b": dict(name="Bob") })
 
-    In the example, `obj2.foo` will be a dictionary with two items. Both
+    In the example, ``obj2.foo`` will be a dictionary with two items. Both
     values will be MyObject objects, the "b" item having been auto-inflated.
 
     WARNING: The produced attribute value is a normal python dict.
     Automatic inflation only occurs when initially setting the attribute.
     Normal accesses to the attribute dictionary will not validate or
-    auto-inflate. For instance, `obj2.foo["c"] = dict(name="Carol")` will
+    auto-inflate. For instance, ``obj2.foo["c"] = dict(name="Carol")`` will
     store a python dict to key "c", not a MyObject.
 
     :param conv: The conversion function or class. If a class, values in
@@ -119,8 +119,8 @@ def dict_of(conv, key_conv=identity, set_key=None, package=None, frame=1):
 
     :param set_key: Optional callable passed key name and inflated value
     object. Can be used to set an attribute on the value objects based on
-    keys. For instance, we might use `set_key=lambda k, v: setattr(v,
-    "name", v.name or k)` to set default "name" attributes.
+    keys. For instance, we might use ``set_key=lambda k, v: setattr(v,
+    "name", v.name or k)`` to set default "name" attributes.
 
     :param package: String or package object to use as the base for
     relative imports. When specified, is passed unmodified to
@@ -165,6 +165,8 @@ def get_class(name, package=None, frame=1):
     relative. If relative and no package is passed, the call stack is
     examined at the frame counter and imports are relative to that package.
 
+    ::
+
        get_class("foo.Bar")                     # Bar class from package foo
        get_class(".Foo")  or  get_class("Foo")  # Foo class from current package
        get_class(".Foo", frame=2)               # Foo class from caller's package
@@ -188,7 +190,7 @@ def get_class(name, package=None, frame=1):
     relative class names are looked up relative to the caller's package.
     When set to a larger value, will look up relative to the caller's
     caller's ... package. Set to 0 or None (or set an explicit value for
-    `package` to disable automatically selecting a base package.
+    *package* to disable automatically selecting a base package.
 
     """
     # Rewrite "Foo" as ".Foo"
