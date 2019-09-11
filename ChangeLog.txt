@@ -1,4 +1,13 @@
 
+amethyst-core 0.8.5 released 2019-09-10
+  - INCOMPATIBLE: Attr(ClassName) converters will no longer make shallow copies.
+    Before, obj.foo = myobject would create a new object instance.
+  - DEPRECATED: Object(Object) shallow copy constructor, it may end up being
+    preserved, but I want to break any core dependence on it.
+  - Attr convert parameter may take a string class name which will be auto-
+    loaded. Useful for parent/child attributes. E.g., parent = Attr("MyClass")
+  - list_of, set_of, dict_of Attr() helpers, validates a substructure.
+
 amethyst-core 0.8.0 released 2019-06-07
   - INCOMPATIBLE: Pass default values through validation/conversion
   - Fix inflation of classes which set immutible flag in constructor
