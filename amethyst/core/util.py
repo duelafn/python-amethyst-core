@@ -103,11 +103,12 @@ def dict_of(conv, key_conv=identity, set_key=None, package=None, frame=1):
     In the example, ``obj2.foo`` will be a dictionary with two items. Both
     values will be MyObject objects, the "b" item having been auto-inflated.
 
-    WARNING: The produced attribute value is a normal python dict.
-    Automatic inflation only occurs when initially setting the attribute.
-    Normal accesses to the attribute dictionary will not validate or
-    auto-inflate. For instance, ``obj2.foo["c"] = dict(name="Carol")`` will
-    store a python dict to key "c", not a MyObject.
+    .. WARNING::
+       The produced attribute value is a normal python dict. Automatic
+       inflation only occurs when initially setting the attribute. Normal
+       accesses to the attribute dictionary will not validate or
+       auto-inflate. For instance, ``obj2.foo["c"] = dict(name="Carol")``
+       will store a python dict to key "c", not a MyObject.
 
     :param conv: The conversion function or class. If a class, values in
     the dict which are not already objects of this class will be inflated
