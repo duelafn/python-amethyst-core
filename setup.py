@@ -40,7 +40,6 @@ setuptools.setup(
     long_description = readme,
     packages     = setuptools.find_packages(),
     requires     = [ "six", ],
-    install_requires = [ 'setuptools' ],
     namespace_packages = [ 'amethyst' ],
     test_suite   = 'setup.my_test_suite',
 )

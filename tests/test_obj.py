@@ -92,6 +92,15 @@ class MyTest(unittest.TestCase):
         a1 = ObjA(foo=24)
         a2 = ObjA(foo=24)
         self.assertTrue(a1 == a2)
+        self.assertTrue(a1 is not a2)
+
+        self.assertEqual(a1.pop("foo"), 24)
+        self.assertEqual(list(a1.keys()), [])
+
+        self.assertTrue(a1.attr_value_ok("foo", 12))
+        self.assertTrue(a1.attr_value_ok("foo", "23"))
+        self.assertTrue(not a1.attr_value_ok("foo", "2.3"))
+        self.assertTrue(not a1.attr_value_ok("plugh", 23))
 
 
     def test_overrides(self):
@@ -160,6 +169,10 @@ class MyTest(unittest.TestCase):
         self.assertEqual(myobj.other, 15)
         self.assertEqual(myobj.deflate_data().get("other", None), None)
         self.assertFalse("other" in myobj.toJSON())
+
+        # other not listed in keys or values
+        self.assertEqual(list(myobj.keys()), ["foo"])
+        self.assertEqual(list(myobj.values()), [23])
 
         with self.assertRaises(AttributeError, msg="Getattr raises exception for names undeclared attrs"):
             myobj.undefined
@@ -418,7 +431,7 @@ class MyTest(unittest.TestCase):
         self.assertIsInstance(a.bar, list, "default list constructor")
         self.assertIsInstance(a.baz, list, "default list")
 
-        self.assertFalse(a.bar is b.bar, "default list constructor initializes different objects")
+        self.assertTrue(a.bar is not b.bar, "default list constructor initializes different objects")
         self.assertTrue(a.baz is b.baz, "default list initializes identical object")
 
 
@@ -434,7 +447,7 @@ class MyTest(unittest.TestCase):
 
         myobj1 = ObjN1(foo=12, bar="Hello")
         myobj2 = ObjN2(foo=13, bar=myobj1, baz=myobj1)
-        self.assertTrue(myobj2.bar is not myobj1)        # copies object
+        self.assertTrue(myobj2.bar is myobj1)            # identical objects
         self.assertTrue(myobj2.bar.dict is myobj1.dict)  # shallowly
         self.assertTrue(myobj2.baz is myobj1)            # isa does not modify
 

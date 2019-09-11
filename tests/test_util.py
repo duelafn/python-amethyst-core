@@ -7,7 +7,9 @@ import six.moves
 import threading
 import unittest
 
-from amethyst.core import cached_property, coalesce
+import amethyst.core
+from amethyst.core import Attr, cached_property, coalesce, identity, get_class
+from amethyst.core import set_of, list_of, dict_of
 
 class Foo(object):
     def __init__(self, bar=None):
@@ -27,8 +29,48 @@ class Foo(object):
         self.computed += 1
         return six.moves._thread.get_ident()
 
+class MyObject(amethyst.core.Object):
+    amethyst_register_type = False
+    foo = Attr(set_of(int))
+    bar = Attr(list_of(float))
+    baz = Attr(dict_of('MyObject'))
+
 
 class MyTest(unittest.TestCase):
+
+    def test_identity(self):
+        foo = Foo()
+        self.assertTrue(foo is identity(foo))
+
+    def test_get_class(self):
+        self.assertTrue(Foo is get_class("Foo"))
+        self.assertTrue(Foo is get_class(".Foo"))
+        self.assertTrue(Foo is get_class("test_util.Foo"))
+        self.assertTrue(Attr is get_class("amethyst.core.Attr"))
+        self.assertTrue(Attr is get_class("Attr"))  # Note: anything in scope is accessible
+
+        self.assertTrue(amethyst.core.Object is get_class("amethyst.core.Object"))
+        with self.assertRaises(AttributeError):
+            get_class("Object")
+
+    def test_attr_structures(self):
+        obj = MyObject()
+        obj.foo = (1, "23", 23)
+        obj.bar = (1, "23", 2.3, 23)
+        obj.baz = dict(a=dict(foo=12), b=obj, c=dict(bar=("2.3", 55)))
+
+        self.assertEqual(obj.foo, set((1,23)))
+        self.assertEqual(obj.bar, [1, 23, 2.3, 23])
+        self.assertTrue(isinstance(obj.baz, dict))
+        self.assertTrue(obj.baz['b'] is obj)
+        self.assertTrue(isinstance(obj.baz['a'], MyObject))
+        self.assertTrue(isinstance(obj.baz['c'], MyObject))
+        self.assertTrue(obj.baz['a'] is not obj.baz['b'])
+        self.assertTrue(obj.baz['b'] is not obj.baz['c'])
+        self.assertTrue(obj.baz['a'] is not obj.baz['c'])
+        self.assertEqual(obj.baz['a'].foo, set((12,)))
+        self.assertEqual(obj.baz['c'].bar, [2.3, 55])
+
 
     def test_coalesce(self):
         self.assertIsNone(coalesce(), "Nothing!")

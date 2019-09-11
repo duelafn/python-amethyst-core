@@ -13,6 +13,7 @@ VSDIST_TAR_GZ=dist/${PKG_VERSION}/${PKGNAME}-${PKG_VERSION}.tar.gz
 check:
 	python3 -m flake8 --config=extra/flake8.ini ${PY_PATHS}
 	python2 -m flake8 --config=extra/flake8.ini ${PY_PATHS}
+	! grep asdf -r amethyst
 	@echo OK
 
 clean:
@@ -49,8 +50,8 @@ sdist: test
 	python3 setup.py sdist
 
 test:
-	python  -E -B -m nose --with-coverage --verbosity=0 --cover-package=amethyst.core tests
 	python3 -E -B -m nose --with-coverage --verbosity=0 --cover-package=amethyst.core tests
+	python2 -E -B -m nose --verbosity=0 tests
 
 tox:
 	tox

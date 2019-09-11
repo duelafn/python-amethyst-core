@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-***************************
-Generic serializable object
-***************************
 
 .. |br| raw:: html
 
@@ -40,7 +37,8 @@ SYNOPSIS
 DESCRIPTION
 ===========
 
-Implements the dictionary interface and stores everything in self.dict.
+:py:class:`Object` implements the dictionary interface and stores
+everything in self.dict.
 
 Subclasses can define :py:class:`Attr` which will have properties defined
 as shortcuts to read and write keys in the dictionary.
@@ -53,6 +51,7 @@ other values (see the :py:func:`Object.JSONEncoder` and
 will perform automatic validation based on type information passed to the
 :py:class:`Attr` objects and will ensure that it is loading data for the
 correct class and that no unexpected keys are present.
+
 """
 # SPDX-License-Identifier: LGPL-3.0
 from __future__ import division, absolute_import, print_function, unicode_literals
@@ -68,11 +67,13 @@ amethyst_deflate
 amethyst_inflate
 """.split()
 
+import inspect
 import json
 import numbers
 import six
+import warnings
 
-from .util import coalesce, smartmatch
+from .util import coalesce, smartmatch, get_class
 
 
 class AmethystException(Exception): pass
@@ -116,11 +117,15 @@ class Attr(object):
     """
     def __init__(self, convert=None, verify=None, isa=None, default=None, builder=None, fget=None, fset=None, fdel=None, doc=None, OVERRIDE=False):
         """
-        :param convert: Attribute converter. At this time, only callables
-           are supported. Callable should accept a single argument, the
-           value, and should return a canonicalized value. Invalid values
-           should raise a ValueError(). If converter is `None`, values will
-           be passed unmodified.
+        :param convert: Attribute converter. Must be a callable or else a
+           text string of a class or function name. Classes and functions
+           may be imported from other packages by prefixing prepending the
+           package name and a dot. For instance, `numpy.array` (see
+           :py:func:`amethyst.core.util.get_class` for string processing
+           details). Callable should accept a single argument, the value,
+           and should return a canonicalized value. Invalid values should
+           raise a ValueError(). If converter is `None`, values will be
+           accepted unmodified.
 
         :param isa: Called after conversion but before verification,
            ensures that the value is one of the passed types. Is a shortcut
@@ -151,10 +156,11 @@ class Attr(object):
 
         :param OVERRIDE: When true, allow attribute to replace an existing
            attribute (from a parent class).
+
         """
-        if verify is not None and not callable(verify):
+        if not (verify is None or callable(verify)):
             raise TypeError("Unknown 'verify' type")
-        if convert is not None and not callable(convert):
+        if not (convert is None or callable(convert) or isinstance(convert, six.text_type)):
             raise TypeError("Unknown 'convert' type")
         self.convert = convert
         self.isa     = isa
@@ -166,6 +172,14 @@ class Attr(object):
         self.default = default
         self.builder = builder
         self.OVERRIDE = OVERRIDE
+
+        self._package = None
+        if isinstance(convert, six.text_type) and (convert.startswith('.') or '.' not in convert):
+            try:
+                self._package = inspect.getmodule(inspect.stack()[1][0])
+            except Exception:
+                pass
+
 
     def build_property(self, name):
         """ """
@@ -219,13 +233,22 @@ class Attr(object):
     def __call__(self, value, key=None):
         """ """
         if self.convert:
-            value = self.convert(value)
+            if getattr(self, "_last_convert", None) is not self.convert:
+                self._last_convert = self._convert = self.convert
+                if not callable(self.convert):
+                    self._convert = get_class(self.convert, package=self._package, frame=None)
+                self._convert_is_type = isinstance(self._convert, type)
+            if not (self._convert_is_type and isinstance(value, self._convert)):
+                value = self._convert(value)
+
         if self.isa:
             if not isinstance(value, self.isa):
                 raise ValueError("Value of '{}' is not an instance of {}".format(key, str(self.isa)))
+
         if self.verify:
             if not self.verify(value):
                 raise ValueError("Value of '{}' does not satisfy verification callback".format(key))
+
         return value
 
     def __and__(self, other):
@@ -567,7 +590,7 @@ class AttrsMetaclass(type):
     """
     Metaclass for Amethyst Object class descendants. Simply looks at all
     attributes for any which are instances of :py:class:`Attr`. The
-    :py:class:`Attr` itself is saved to the :py:attr:`_attr` class
+    :py:class:`Attr` itself is saved to the :py:attr:`_attrs` class
     attribute (a dictionary) and a property created in its place via the
     Attr :py:func:`Attr.build_property` method.
     """
@@ -625,7 +648,7 @@ class Object(BaseObject):
     """
     Amethyst Base Object
 
-    :ivar _attr: Dictionary mapping attribute names to :py:class:`Attr`
+    :ivar _attrs: Dictionary mapping attribute names to :py:class:`Attr`
       objects. Should not be modified, but can be read for introspection of
       an Object.
 
@@ -691,14 +714,15 @@ class Object(BaseObject):
 
         .. warning::
            Passing a single argument that is an instance of the class
-           itself is reserved for internal use only and behavior is likely
-           to change.
+           itself is reserved for internal use only and behavior may
+           change.
         """
         super(Object, self).__init__()
         self._amethyst_mutable_ = True
 
         # Special-case of single argument:
         if len(args) == 1 and not kwargs and isinstance(args[0], type(self)):
+            warnings.warn("amethyst shallow-copy, this use case may become deprecated. If you have a use for it, notify upstream developer soon!", DeprecationWarning)
             # - NOT A COPY! Primary case of Object(Object()) is
             #   re-import by JSON Hook, thus we just need another view
             #   of the same data (returning the same object would also
