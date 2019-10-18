@@ -286,6 +286,7 @@ class Attr(object):
                 return self(value)
         return self.__class__(convert).copy_meta(self, other)
 
+    __hash__ = None   # has __eq__ but isn't hashable
     def __eq__(self, other):
         """
         Tests via :py:func:`amethyst.core.util.smartmatch`
@@ -778,6 +779,7 @@ class Object(BaseObject):
         """ """
         return iter(self.dict)
 
+    __hash__ = None   # has __eq__ but isn't hashable
     def __eq__(self, other):
         """
         Object equality. Tests all :py:func:`Attr()`s and only
