@@ -321,17 +321,17 @@ class MyTest(unittest.TestCase):
         myobj = ObjSer1(foo=23)
         self.assertEqual(
             six.text_type(myobj.toJSON(sort_keys=True)),
-            '{"__class__": "__test_obj.ObjSer1__", "foo": 23}'
+            '{{"__class__": "__{}.ObjSer1__", "foo": 23}}'.format(self.__module__)
         )
 
         # required by default
-        myobj = ObjSer1.newFromJSON('{"__class__": "__test_obj.ObjSer1__", "foo":23}')
+        myobj = ObjSer1.newFromJSON('{{"__class__": "__{}.ObjSer1__", "foo":23}}'.format(self.__module__))
         self.assertEqual(myobj.foo, 23)
 
-        with six.assertRaisesRegex(self, ValueError, r'should be __test_obj\.ObjSer1__'):
+        with six.assertRaisesRegex(self, ValueError, r'should be __{}\.ObjSer1__'.format(self.__module__)):
             ObjSer1.newFromJSON('{"foo":23, "bar":"plugh"}')
-        with six.assertRaisesRegex(self, ValueError, r'expected __test_obj\.ObjSer1__'):
-            ObjSer1.newFromJSON('{"__class__": "__test_obj.ObjSer2__", "foo":23}')
+        with six.assertRaisesRegex(self, ValueError, r'expected __{}\.ObjSer1__'.format(self.__module__)):
+            ObjSer1.newFromJSON('{{"__class__": "__{}.ObjSer2__", "foo":23}}'.format(self.__module__))
 
         # local override
         myobj = ObjSer1.newFromJSON('{"foo":23, "bar":"plugh"}', verifyclass=False)
@@ -407,7 +407,7 @@ class MyTest(unittest.TestCase):
         self.assertTrue(hasattr(Obj3, "foo"), "Attrs are inherited")
 
         obj = Obj3()
-        obj.fromJSON('{"__class__": "__test_obj.Obj3__", "bar": {"__bob__": "chaz"}, "flags": {"__set__": ["chaz"]}, "baz": "123.45"}')
+        obj.fromJSON('{{"__class__": "__{}.Obj3__", "bar": {{"__bob__": "chaz"}}, "flags": {{"__set__": ["chaz"]}}, "baz": "123.45"}}'.format(self.__module__))
         self.assertEqual(obj.bar, "BOB", "jsonhooks extensions")
         self.assertEqual(list(obj.flags)[0], "chaz", "jsonhooks extensions inherit originals")
 

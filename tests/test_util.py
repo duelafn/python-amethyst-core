@@ -45,7 +45,6 @@ class MyTest(unittest.TestCase):
     def test_get_class(self):
         self.assertTrue(Foo is get_class("Foo"))
         self.assertTrue(Foo is get_class(".Foo"))
-        self.assertTrue(Foo is get_class("test_util.Foo"))
         self.assertTrue(Attr is get_class("amethyst.core.Attr"))
         self.assertTrue(Attr is get_class("Attr"))  # Note: anything in scope is accessible
 
