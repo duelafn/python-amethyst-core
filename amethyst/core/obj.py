@@ -615,9 +615,9 @@ class AttrsMetaclass(type):
 
         # Merge json hooks into the base _json* hooks.
         for jattr in "jsonhooks", "jsonencoders":
+            _jattr = "_" + jattr
+            setattr(new_cls, _jattr, dict(getattr(new_cls, _jattr, ())))# Shallow clone
             if hasattr(new_cls, jattr):
-                _jattr = "_" + jattr
-                setattr(new_cls, _jattr, dict(getattr(new_cls, _jattr)))# Shallow clone
                 getattr(new_cls, _jattr).update(getattr(new_cls, jattr))
                 delattr(new_cls, jattr)
 
@@ -626,7 +626,7 @@ class AttrsMetaclass(type):
                 raise DuplicateAttributeException("Attribute {} in {} already defined in a parent class.".format(name, cls.__name__))
             setattr(new_cls, name, attr.build_property(name))
 
-        new_cls._attrs = new_cls._attrs.copy()
+        new_cls._attrs = new_cls._attrs.copy() if hasattr(new_cls, '_attrs') else dict()
         new_cls._attrs.update(new_attrs)
         new_cls._dundername = "__{}.{}__".format(new_cls.__module__, new_cls.__name__)
 
@@ -636,11 +636,7 @@ class AttrsMetaclass(type):
 # Manually create a base object so that we can run in both python 2 and 3.
 #
 #   https://wiki.python.org/moin/PortingToPy3k/BilingualQuickRef#metaclasses
-BaseObject = AttrsMetaclass(str('BaseObject'), (), {
-    "_attrs": {},
-    "_jsonencoders": {},
-    "_jsonhooks": {},
-})
+BaseObject = AttrsMetaclass(str('BaseObject'), (), {})
 
 UNIQUE1 = object()
 UNIQUE2 = object()
