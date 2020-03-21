@@ -53,6 +53,10 @@ test:
 	python3 -E -B -m nose --with-coverage --verbosity=0 --cover-package=amethyst.core tests
 	python2 -E -B -m nose --verbosity=0 tests
 
+test-pypy:
+	for f in tests/test_*.py; do pypy3 -E -B "$$f"; done
+	for f in tests/test_*.py; do pypy -E -B -c "import sys ; sys.path.append('/usr/lib/python2.7/dist-packages') ; __file__ = '$$f'; execfile('$$f')"; done
+
 tox:
 	tox
 
