@@ -132,8 +132,8 @@ def dict_of(conv, key_conv=identity, set_key=None, package=None, frame=1):
     """
     c = _Container()  # Closure variable for python 2 support (don't have "nonlocal")
     if package is None and (
-            (not callable(conv) and (conv.startswith('.') or '.' not in conv)) or
-            (not callable(key_conv) and (key_conv.startswith('.') or '.' not in key_conv))
+            (not callable(conv) and (conv.startswith('.') or '.' not in conv))
+         or (not callable(key_conv) and (key_conv.startswith('.') or '.' not in key_conv))
     ):
         package = inspect.getmodule(inspect.stack()[frame][0])
 

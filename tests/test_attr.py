@@ -96,7 +96,7 @@ class MyTest(unittest.TestCase):
             i = Attr(builder=(lambda: self.assertFalse(True, "builder called lazily")))
             j = Attr(builder=(lambda: 12))
             k = Attr(float) & Attr(verify=(lambda x: 0 < x < 10))
-            l = Attr(float) | Attr(int)
+            l = Attr(float) | Attr(int)  # noqa E741
             m = Attr(int) | Attr(float)
             n = Attr(int) == (2,3,6,7,8)
             o = Attr(int) != (0, 1)
@@ -159,10 +159,10 @@ class MyTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             myobj.k = 12
 
-        myobj.l = "5"
+        myobj.l = "5"  # noqa E741
         self.assertEqual(myobj.l, 5)
         self.assertTrue(not isinstance(myobj.l, int))
-        myobj.l = "5.0"
+        myobj.l = "5.0"  # noqa E741
         self.assertEqual(myobj.l, 5)
         self.assertTrue(not isinstance(myobj.l, int))
         myobj.m = "5"
