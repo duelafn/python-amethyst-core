@@ -22,8 +22,8 @@ class Counter(object):
         return self.value
 
 # package-level object for testing string attrs
-class TestAttrObject(Object):
-    foo = Attr("TestAttrObject")
+class AttrObject(Object):
+    foo = Attr("AttrObject")
     bar = Attr(".Counter")
 
 class MyTest(unittest.TestCase):
@@ -67,10 +67,10 @@ class MyTest(unittest.TestCase):
 
     def test_Attr_classes(self):
         counter = Counter()
-        obj1 = TestAttrObject()
-        obj2 = TestAttrObject(foo=dict(foo=obj1), bar=counter)
+        obj1 = AttrObject()
+        obj2 = AttrObject(foo=dict(foo=obj1), bar=counter)
 
-        self.assertTrue(isinstance(obj2.foo, TestAttrObject))
+        self.assertTrue(isinstance(obj2.foo, AttrObject))
         self.assertTrue(obj2.foo.foo is obj1)
         self.assertTrue(obj2.foo is not obj1)
         self.assertTrue(obj2.bar is counter)

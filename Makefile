@@ -50,8 +50,8 @@ sdist: test
 	python3 setup.py sdist
 
 test:
-	python3 -E -B -m nose --with-coverage --verbosity=0 --cover-package=amethyst.core tests
-	python2 -E -B -m nose --verbosity=0 tests
+	python3 -m pytest --cov=amethyst/ --cov-branch --cov-report=html:_coverage tests
+	python2 -m pytest tests
 
 test-pypy:
 	for f in tests/test_*.py; do pypy3 -E -B "$$f"; done

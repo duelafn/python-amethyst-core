@@ -4,7 +4,7 @@ Section: python
 Priority: optional
 Build-Depends: debhelper (>= 10), dh-python,
  python-all, python-setuptools, python-six, python-pytest,
- python3-all, python3-setuptools, python3-six, python3-pytest
+ python3-all, python3-setuptools, python3-six, python3-pytest, python3-pytest-cov
 X-Python-Version: >= 2.6
 X-Python3-Version: >= 3.2
 Standards-Version: 4.1.4
