@@ -169,11 +169,7 @@ class MyTest(unittest.TestCase):
 
     def test_other_attrs(self):
         """Other attributes explicitly allowed and are not stored in data hash"""
-        class ObjOther(Object):
-            foo = Attr(int)
-            bar = Attr(isa=six.text_type).strip()
-
-        myobj = ObjOther(foo=23)
+        myobj = Obj(foo=23)
         myobj.other = 15
         self.assertEqual(myobj.other, 15)
         self.assertEqual(myobj.deflate_data().get("other", None), None)
@@ -285,85 +281,76 @@ class MyTest(unittest.TestCase):
 
 
     def test_README_serialization(self):
-        class ObjSer1(Object):
+        class ObjSer(Object):
             foo = Attr(int)
-            bar = Attr(isa=six.text_type).strip()
+            bar = Attr(Obj)
 
-        class ObjSer2(Object):
-            foo = Attr(int)
-            bar = Attr(ObjSer1)
-
-        myobj = ObjSer1(foo="23")
+        myobj = Obj(foo="23")
         self.assertEqual(myobj.foo + 1, 24)
 
         # JSON can be produced and loaded
-        myobj = ObjSer1(foo=42, bar="Hello")
+        myobj = Obj(foo=42, bar="Hello")
         json_string = myobj.toJSON()
-        myobj1 = ObjSer1.newFromJSON(json_string)
+        myobj1 = Obj.newFromJSON(json_string)
         self.assertEqual(myobj.dict, myobj1.dict)
 
         # Even for nested objects
-        myobj1 = ObjSer1(foo=12, bar="Hello")
-        myobj2 = ObjSer2(foo=13, bar=myobj1)
+        myobj1 = Obj(foo=12, bar="Hello")
+        myobj2 = ObjSer(foo=13, bar=myobj1)
         json_string = myobj2.toJSON()
-        myobjn = ObjSer2.newFromJSON(json_string)
+        myobjn = ObjSer.newFromJSON(json_string)
         self.assertEqual(myobjn.foo, 13)
         self.assertEqual(myobjn.bar.foo, 12)
         self.assertEqual(myobjn.bar.bar, "Hello")
 
         # Other serialization libraries
-        myobj = ObjSer1(foo=42, bar="Hello")
+        myobj = Obj(foo=42, bar="Hello")
         deflated = marshal.dumps(myobj.deflate_data())
-        myobj2 = ObjSer1.inflate_new(marshal.loads(deflated))
+        myobj2 = Obj.inflate_new(marshal.loads(deflated))
         self.assertEqual(myobj.dict, myobj2.dict)
         self.assertTrue(myobj.dict is not myobj2.dict)
 
-        myobj1 = ObjSer1(foo=15, bar="Hello1")
-        myobj2 = ObjSer2(foo=16, bar=myobj1)
+        myobj1 = Obj(foo=15, bar="Hello1")
+        myobj2 = ObjSer(foo=16, bar=myobj1)
         deflated = marshal.dumps(myobj2.deflate_data())
-        myobjn = ObjSer2.inflate_new(marshal.loads(deflated))
+        myobjn = ObjSer.inflate_new(marshal.loads(deflated))
         self.assertEqual(myobjn.foo, 16)
         self.assertEqual(myobjn.bar.foo, 15)
         self.assertEqual(myobjn.bar.bar, "Hello1")
 
         # Type hints
-        myobj = ObjSer1(foo=23)
+        myobj = Obj(foo=23)
         self.assertEqual(
             six.text_type(myobj.toJSON(sort_keys=True)),
-            '{{"__class__": "__{}.ObjSer1__", "foo": 23}}'.format(self.__module__)
+            '{{"__class__": "__{}.Obj__", "foo": 23}}'.format(self.__module__)
         )
 
         # required by default
-        myobj = ObjSer1.newFromJSON('{{"__class__": "__{}.ObjSer1__", "foo":23}}'.format(self.__module__))
+        myobj = Obj.newFromJSON('{{"__class__": "__{}.Obj__", "foo":23}}'.format(self.__module__))
         self.assertEqual(myobj.foo, 23)
 
-        with six.assertRaisesRegex(self, ValueError, r'should be __{}\.ObjSer1__'.format(self.__module__)):
-            ObjSer1.newFromJSON('{"foo":23, "bar":"plugh"}')
-        with six.assertRaisesRegex(self, ValueError, r'expected __{}\.ObjSer1__'.format(self.__module__)):
-            ObjSer1.newFromJSON('{{"__class__": "__{}.ObjSer2__", "foo":23}}'.format(self.__module__))
+        with six.assertRaisesRegex(self, ValueError, r'should be __{}\.Obj__'.format(self.__module__)):
+            Obj.newFromJSON('{"foo":23, "bar":"plugh"}')
+        with six.assertRaisesRegex(self, ValueError, r'expected __{}\.Obj__'.format(self.__module__)):
+            Obj.newFromJSON('{{"__class__": "__{}.ObjSer__", "foo":23}}'.format(self.__module__))
 
         # local override
-        myobj = ObjSer1.newFromJSON('{"foo":23, "bar":"plugh"}', verifyclass=False)
+        myobj = Obj.newFromJSON('{"foo":23, "bar":"plugh"}', verifyclass=False)
         self.assertEqual(myobj.foo, 23)
         self.assertEqual(myobj.bar, "plugh")
 
-        class ObjSer3(Object):
+        class ObjSer1(Object):
             amethyst_includeclass  = False
             amethyst_verifyclass   = False
             foo = Attr(int)
             bar = Attr(isa=six.text_type).strip()
 
-        myobj = ObjSer3.newFromJSON('{"foo":"23", "bar":"plugh"}')
+        myobj = ObjSer1.newFromJSON('{"foo":"23", "bar":"plugh"}')
         self.assertEqual(myobj.toJSON(sort_keys=True), '{"bar": "plugh", "foo": 23}')
 
 
     def test_immutability(self):
-        class ObjIm(Object):
-            foo = Attr(int)
-            bar = Attr()
-            baz = Attr(float)
-            bip = Attr(float)
-        obj = ObjIm()
+        obj = Obj()
 
         obj.amethyst_make_immutable()
         self.assertFalse(obj.amethyst_is_mutable(), "is not mutable")
@@ -373,29 +360,23 @@ class MyTest(unittest.TestCase):
 
         self.assertIs(obj.amethyst_make_mutable(), obj, "make_mutable returns self")
         self.assertTrue(obj.amethyst_is_mutable(), "is mutable")
-        obj["bar"] = 23
+        obj["bip"] = 23
 
         self.assertIs(obj.amethyst_make_immutable(), obj, "make_mutable returns self")
         self.assertFalse(obj.amethyst_is_mutable(), "is not mutable")
 
-        self.assertEqual(obj["bar"], 23, "Can read values when immutable")
+        self.assertEqual(obj["bip"], 23, "Can read values when immutable")
 
 
     def test_subclass(self):
-        class ObjSub(Object):
-            foo = Attr(int)
-            bar = Attr()
-            baz = Attr(float)
-            bip = Attr(float)
-
-        obj = ObjSub(foo=23)
-        obj["bar"] = 12
+        obj = Obj(foo=23)
+        obj["bar"] = "12"
 
         self.assertEqual(obj.foo, 23, "Getattr works in subclass when set by constructor")
-        self.assertEqual(obj.bar, 12, "Getattr works in subclass when set by setitem")
+        self.assertEqual(obj.bar, "12", "Getattr works in subclass when set by setitem")
         self.assertIsNone(obj.baz, "Getattr works on uninitialized values")
 
-        self.assertEqual(obj.dict, {"foo": 23, "bar": 12}, "No autovivification")
+        self.assertEqual(obj.dict, {"foo": 23, "bar": "12"}, "No autovivification")
 
         obj.amethyst_make_immutable()
         self.assertIsNone(obj.bip, "Can read non-existant keys when immutable")
@@ -405,18 +386,18 @@ class MyTest(unittest.TestCase):
             obj.foo
 
         with self.assertRaises(DuplicateAttributeException, msg="Duplicate attribute raises exception"):
-            class Obj2(ObjSub):
+            class ObjSub1(Obj):
                 foo = Attr(int)
 
-        class Obj3(ObjSub):
+        class ObjSub(Obj):
             jsonhooks = { "__bob__": (lambda obj: "BOB") }
             bab = Attr(int)
             flags = Attr(isa=set)
 
-        self.assertTrue(hasattr(Obj3, "foo"), "Attrs are inherited")
+        self.assertTrue(hasattr(ObjSub, "foo"), "Attrs are inherited")
 
-        obj = Obj3()
-        obj.fromJSON('{{"__class__": "__{}.Obj3__", "bar": {{"__bob__": "chaz"}}, "flags": {{"__set__": ["chaz"]}}, "baz": "123.45"}}'.format(self.__module__))
+        obj = ObjSub()
+        obj.fromJSON('{{"__class__": "__{}.ObjSub__", "bar": {{"__bob__": "chaz"}}, "flags": {{"__set__": ["chaz"]}}, "baz": "123.45"}}'.format(self.__module__))
         self.assertEqual(obj.bar, "BOB", "jsonhooks extensions")
         self.assertEqual(list(obj.flags)[0], "chaz", "jsonhooks extensions inherit originals")
 
@@ -426,13 +407,13 @@ class MyTest(unittest.TestCase):
 
 
     def test_default(self):
-        class Obj4(Object):
+        class ObjDflt(Object):
             foo = Attr(int, default=3)
             bar = Attr(default=list)
             baz = Attr(default=[])
 
-        a = Obj4()
-        b = Obj4()
+        a = ObjDflt()
+        b = ObjDflt()
 
         self.assertEqual(a.foo, 3, "default int a")
         self.assertEqual(b.foo, 3, "default int b")
@@ -445,17 +426,13 @@ class MyTest(unittest.TestCase):
 
 
     def test_nested(self):
-        class ObjN1(Object):
+        class ObjNest(Object):
             foo = Attr(int)
-            bar = Attr(isa=six.text_type).strip()
+            bar = Attr(Obj)
+            baz = Attr(isa=Obj)
 
-        class ObjN2(Object):
-            foo = Attr(int)
-            bar = Attr(ObjN1)
-            baz = Attr(isa=ObjN1)
-
-        myobj1 = ObjN1(foo=12, bar="Hello")
-        myobj2 = ObjN2(foo=13, bar=myobj1, baz=myobj1)
+        myobj1 = Obj(foo=12, bar="Hello")
+        myobj2 = ObjNest(foo=13, bar=myobj1, baz=myobj1)
         self.assertTrue(myobj2.bar is myobj1)            # identical objects
         self.assertTrue(myobj2.bar.dict is myobj1.dict)  # shallowly
         self.assertTrue(myobj2.baz is myobj1)            # isa does not modify
@@ -494,16 +471,10 @@ class MyTest(unittest.TestCase):
         sqlite3:
           - ensure that sqlite3.Row objects can be used to initialize objects
         """
-        class Obj5(Object):
-            foo = Attr(int)
-            bar = Attr()
-            baz = Attr(float)
-            bip = Attr()
-
         # six.iteritems(obj)
         try:
             import six
-            obj = Obj5(foo=12, bar="hi", baz=2.3)
+            obj = Obj(foo=12, bar="hi", baz=2.3)
             got = set()
             for k, v in six.iteritems(obj):
                 got.add("{}={}".format(k, v))
@@ -518,7 +489,7 @@ class MyTest(unittest.TestCase):
         conn.execute("CREATE TABLE test (foo INTEGER, bar TEXT, baz TEXT, bip TEXT)")
         conn.execute("INSERT INTO test VALUES (74, 'plugh', '12.5', NULL)")
 
-        obj = Obj5(conn.execute('SELECT * FROM test').fetchone())
+        obj = Obj(conn.execute('SELECT * FROM test').fetchone())
         self.assertEqual(obj.foo, 74)
         self.assertEqual(obj.bar, "plugh")
         self.assertEqual(obj.baz, 12.5)
