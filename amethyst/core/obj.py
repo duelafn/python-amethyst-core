@@ -81,6 +81,10 @@ class ImmutableObjectException(AmethystException): pass
 class DuplicateAttributeException(AmethystException): pass
 
 
+UNIQUE1 = object()
+UNIQUE2 = object()
+
+
 class Attr(object):
     """
     Base class for Amethyst Object Attributes
@@ -539,45 +543,59 @@ def amethyst_deflate(obj, deflator=None):
     elif isinstance(obj, tuple):
         return tuple(amethyst_deflate(k, deflator) for k in obj)
     elif hasattr(deflator, "_jsonencoders") and obj.__class__ in deflator._jsonencoders:
-        return deflator._jsonencoders[obj.__class__](obj)
+        return amethyst_deflate(deflator._jsonencoders[obj.__class__](obj), deflator)
     elif obj.__class__ in global_amethyst_encoders:
-        return global_amethyst_encoders[obj.__class__](obj)
+        return amethyst_deflate(global_amethyst_encoders[obj.__class__](obj), deflator)
     raise TypeError("Can't encode {}".format(repr(obj)))
 
 
-def amethyst_inflate(obj, inflator=None, maxdepth=None):
+def amethyst_inflate(obj, inflator=None, start=0):
     """
-    Inflate a "dumb" structure to a structure of objects, the opposite of
-    :py:func:`amethyst_deflate`. Allows inflation from arbitrary serialization
-    tools, as long as they can produce dicts and lists.
+    Inflate an annotated "dumb" structure to a structure of objects, the
+    opposite of :py:func:`amethyst_deflate`.
 
-    Makes use of :py:data:`global_amethyst_encoders` by default. Pass an amethyst
-    Object as second argument to make use of any Object-local encoders.
+    This function should be used to assist in inflation of ``Object``
+    instances using alternative serialization tools. Any serializer that
+    can produce plain dicts and lists should work with this function.
+
+    This function handles either *single-key* or *flat* style annotations.
+    Un-annotated constructions will pass through unchanged.
+
+    This function makes use of :py:data:`global_amethyst_encoders` by
+    default. Pass an amethyst ``Object`` as second argument to make use of
+    any Object-local encoders.
 
     .. note::
-      If your source is JSON, the amethyst object's :py:func:`Object.fromJSON()` or
-      class :py:func:`Object.newFromJSON()` method is probably better.
+      If your source is JSON, the amethyst object's :py:func:`Object.fromJSON`
+      or class :py:func:`Object.newFromJSON` method is probably better.
     """
     global global_amethyst_hooks
-    if maxdepth is not None:
-        if maxdepth < 0:
-            return obj
-        maxdepth -= 1
 
     if isinstance(obj, dict):
-        if 1 == len(obj):
-            for key in obj:
-                if hasattr(inflator, "_jsonhooks") and key in inflator._jsonhooks:
-                    return inflator._jsonhooks[key](obj[key])
-                elif key in global_amethyst_hooks:
-                    return global_amethyst_hooks[key](obj[key])
-        elif maxdepth is None or maxdepth >= 0:
-            for key in obj:
-                obj[key] = amethyst_inflate(obj[key], inflator, maxdepth=maxdepth)
+        # Look for *single-key* or *flat* style annotations
+        key = data = None
+        if start <= 0:
+            if '__class__' in obj:
+                data = dict(obj)
+                key = amethyst_inflate(data.pop('__class__'), inflator, start=1)
+            elif 1 == len(obj):
+                key = list(obj.keys())[0]
+                data = amethyst_inflate(obj[key], inflator, start=1)
 
-    elif isinstance(obj, list) and (maxdepth is None or maxdepth >= 0):
+        # If annotated, try to inflate
+        if key is not None:
+            if hasattr(inflator, "_jsonhooks") and key in inflator._jsonhooks:
+                return inflator._jsonhooks[key](data)
+            elif key in global_amethyst_hooks:
+                return global_amethyst_hooks[key](data)
+
+        # If not annotated or inflation fails (unknown class), inflate values:
+        for key in obj:
+            obj[key] = amethyst_inflate(obj[key], inflator, start=(start-1))
+
+    elif isinstance(obj, list):
         for i, val in enumerate(obj):
-            obj[i] = amethyst_inflate(val, inflator, maxdepth=maxdepth)
+            obj[i] = amethyst_inflate(val, inflator, start=(start-1))
 
     return obj
 
@@ -637,9 +655,6 @@ class AttrsMetaclass(type):
 #
 #   https://wiki.python.org/moin/PortingToPy3k/BilingualQuickRef#metaclasses
 BaseObject = AttrsMetaclass(str('BaseObject'), (), {})
-
-UNIQUE1 = object()
-UNIQUE2 = object()
 
 class Object(BaseObject):
     """
@@ -1199,4 +1214,5 @@ class Object(BaseObject):
 
         Subclasses: this method may be overridden with an unrelated implementation.
         """
-        return cls(amethyst_inflate(obj, cls))
+        rv = amethyst_inflate(obj, cls)
+        return rv if rv.__class__ is cls else cls(rv)

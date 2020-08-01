@@ -1,6 +1,7 @@
 
 amethyst-core 0.8.6
   - INCOMPATIBLE: Remove Attr.__eq__ and Attr.__ne__, they aren't always what one wants
+  - bugfix: amethyst_inflate/amethyst_deflate are recursive
   - amethyst.core.obj.AttrsMetaclass easier to subclass
 
 amethyst-core 0.8.5 released 2019-09-10

@@ -13,6 +13,15 @@ import sqlite3
 import amethyst.core.obj
 from amethyst.core import ImmutableObjectException, DuplicateAttributeException
 from amethyst.core import Object, Attr
+from amethyst.core import amethyst_deflate, amethyst_inflate
+
+
+class Obj(Object):
+    foo = Attr(int)
+    bar = Attr(isa=six.text_type).strip()
+    baz = Attr(float)
+    bip = Attr()
+
 
 class MyTest(unittest.TestCase):
     def test_ttobject(self):
@@ -451,6 +460,29 @@ class MyTest(unittest.TestCase):
         self.assertTrue(myobj2.bar.dict is myobj1.dict)  # shallowly
         self.assertTrue(myobj2.baz is myobj1)            # isa does not modify
 
+
+    def test_in_de_flation(self):
+        obj = Obj(foo=23, bip=[Obj(baz=2.3), 11])
+
+        dname = "__{}.{}__".format(Obj.__module__, Obj.__name__)
+        self.assertIn(dname, ('__test_obj.Obj__', '____main__.Obj__'))
+
+        plain = amethyst_deflate(obj)
+        self.assertIsInstance(plain, dict)
+        self.assertIsInstance(plain[dname], dict)
+        self.assertIsInstance(plain[dname]['foo'], int)
+        self.assertIsInstance(plain[dname]['bip'], list)
+        self.assertIsInstance(plain[dname]['bip'][0], dict)
+
+        new = amethyst_inflate(plain)
+        self.assertIsInstance(new, Obj)
+        self.assertEqual(new.foo, 23)
+        self.assertIsInstance(new.bip[0], Obj)
+        self.assertEqual(new.bip[0].baz, 2.3)
+        self.assertEqual(new.bip[1], 11)
+        self.assertIsNone(new.bar)
+        self.assertIsNone(new.baz)
+        self.assertIsNone(new.bip[0].foo)
 
     def test_integration(self):
         """
