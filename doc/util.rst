@@ -17,3 +17,4 @@ amethyst.core.util
     tupley
 
 .. automodule:: amethyst.core.util
+   :members:
