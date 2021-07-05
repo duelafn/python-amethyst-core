@@ -3,22 +3,12 @@ Maintainer: Dean Serenevy <dean@serenevy.net>
 Section: python
 Priority: optional
 Build-Depends: debhelper (>= 10), dh-python,
- python-all, python-setuptools, python-six, python-pytest,
  python3-all, python3-setuptools, python3-six, python3-pytest, python3-pytest-cov
-X-Python-Version: >= 2.6
-X-Python3-Version: >= 3.2
-Standards-Version: 4.1.4
-
-Package: python-amethyst-core
-Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, python-six
-Description: A sober python base library (Python 2)
- Provides a base object class which can serializes itself to JSON and
- includes additional utility functions.
+Standards-Version: 4.4.0
 
 Package: python3-amethyst-core
 Architecture: all
-Depends: ${misc:Depends}, ${python3:Depends}, python3-six
+Depends: ${misc:Depends}, ${python3:Depends}
 Description: A sober python base library (Python 3)
  Provides a base object class which can serializes itself to JSON and
  includes additional utility functions.

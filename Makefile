@@ -12,8 +12,6 @@ VSDIST_TAR_GZ=dist/${PKG_VERSION}/${PKGNAME}-${PKG_VERSION}.tar.gz
 
 check:
 	python3 -m flake8 --config=extra/flake8.ini ${PY_PATHS}
-	python2 -m flake8 --config=extra/flake8.ini ${PY_PATHS}
-	! grep asdf -r amethyst
 	@echo OK
 
 clean:
@@ -51,18 +49,15 @@ sdist: test
 
 test:
 	python3 -m pytest --cov=amethyst/ --cov-branch --cov-report=html:_coverage tests
-	python2 -m pytest tests
 
 test-pypy:
 	for f in tests/test_*.py; do pypy3 -E -B "$$f"; done
-	for f in tests/test_*.py; do pypy -E -B -c "import sys ; sys.path.append('/usr/lib/python2.7/dist-packages') ; __file__ = '$$f'; execfile('$$f')"; done
 
 tox:
 	tox
 
 wheel:
 	python3 setup.py bdist_wheel
-	python2 setup.py bdist_wheel
 
 zip: test
 	python3 setup.py sdist --format=zip

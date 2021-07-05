@@ -70,7 +70,6 @@ amethyst_inflate
 import inspect
 import json
 import numbers
-import six
 import warnings
 
 from .util import coalesce, smartmatch, get_class
@@ -164,7 +163,7 @@ class Attr(object):
         """
         if not (verify is None or callable(verify)):
             raise TypeError("Unknown 'verify' type")
-        if not (convert is None or callable(convert) or isinstance(convert, six.text_type)):
+        if not (convert is None or callable(convert) or isinstance(convert, str)):
             raise TypeError("Unknown 'convert' type")
         self.convert = convert
         self.isa     = isa
@@ -178,7 +177,7 @@ class Attr(object):
         self.OVERRIDE = OVERRIDE
 
         self._package = None
-        if isinstance(convert, six.text_type) and (convert.startswith('.') or '.' not in convert):
+        if isinstance(convert, str) and (convert.startswith('.') or '.' not in convert):
             try:
                 self._package = inspect.getmodule(inspect.stack()[1][0])
             except Exception:
@@ -534,10 +533,10 @@ def amethyst_deflate(obj, deflator=None):
     """
     global global_amethyst_encoders
 
-    if obj is None or isinstance(obj, (six.string_types, six.binary_type, numbers.Number, bool)):
+    if obj is None or isinstance(obj, (str, bytes, numbers.Number, bool)):
         return obj
     elif isinstance(obj, dict):
-        return { six.text_type(k): amethyst_deflate(obj[k], deflator) for k in obj }
+        return { str(k): amethyst_deflate(obj[k], deflator) for k in obj }
     elif isinstance(obj, list):
         return [ amethyst_deflate(k, deflator) for k in obj ]
     elif isinstance(obj, tuple):
@@ -639,7 +638,7 @@ class AttrsMetaclass(type):
                 getattr(new_cls, _jattr).update(getattr(new_cls, jattr))
                 delattr(new_cls, jattr)
 
-        for name, attr in six.iteritems(new_attrs):
+        for name, attr in new_attrs.items():
             if not attr.OVERRIDE and hasattr(new_cls, name):
                 raise DuplicateAttributeException("Attribute {} in {} already defined in a parent class.".format(name, cls.__name__))
             setattr(new_cls, name, attr.build_property(name))
@@ -753,7 +752,7 @@ class Object(BaseObject):
             if data:
                 self.amethyst_load_data(data, verifyclass=False)
 
-        for name, attr in six.iteritems(self._attrs):
+        for name, attr in self._attrs.items():
             if attr.default is not None and name not in self.dict:
                 self.dict[name] = attr.get_default()
 
@@ -800,7 +799,7 @@ class Object(BaseObject):
         """
         if self.__class__ != other.__class__:
             return False
-        for name, attr in six.iteritems(self._attrs):
+        for name, attr in self._attrs.items():
             if getattr(self, name, UNIQUE1) != getattr(other, name, UNIQUE2):
                 return False
         return True
@@ -811,7 +810,7 @@ class Object(BaseObject):
         """
         Subclasses: this method may be overridden with an unrelated implementation.
         """
-        for name, attr in six.iteritems(self._attrs):
+        for name, attr in self._attrs.items():
             if name in self.dict:
                 yield name, self.dict[name]
     iteritems = items
@@ -819,14 +818,14 @@ class Object(BaseObject):
         """
         Subclasses: this method may be overridden with an unrelated implementation.
         """
-        for name, attr in six.iteritems(self._attrs):
+        for name, attr in self._attrs.items():
             if name in self.dict:
                 yield name
     def values(self, **kwargs):
         """
         Subclasses: this method may be overridden with an unrelated implementation.
         """
-        for name, attr in six.iteritems(self._attrs):
+        for name, attr in self._attrs.items():
             if name in self.dict:
                 yield self.dict[name]
 
@@ -943,7 +942,7 @@ class Object(BaseObject):
         """
         strategy = coalesce(import_strategy, self.amethyst_import_strategy)
         data = d.copy() if strategy == "sloppy" else dict()
-        for key, val in six.iteritems(d):
+        for key, val in d.items():
             attr = self._attrs.get(key)
             if attr is None and strategy == "strict":
                 raise KeyError("key {} not permitted in {} object".format(key, self._dundername))
@@ -977,7 +976,7 @@ class Object(BaseObject):
         strategy = coalesce(import_strategy, self.amethyst_import_strategy)
         data = d.copy() if strategy == "sloppy" else dict()
         keys = set(d.keys()) if strategy == "strict" else set()
-        for name, attr in six.iteritems(self._attrs):
+        for name, attr in self._attrs.items():
             keys.discard(name)
             if name in d:
                 data[name] = attr(d[name], name)
@@ -1188,7 +1187,7 @@ class Object(BaseObject):
         :param verifyclass: Provides a local override to the :py:attr:`amethyst_verifyclass` class attribute.
         """
         kwargs.setdefault('object_hook', self.JSONObjectHook)
-        if isinstance(source, six.string_types):
+        if isinstance(source, str):
             data = json.loads(source, **kwargs)
         else:
             data = json.load(source, **kwargs)

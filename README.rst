@@ -2,7 +2,7 @@
 amethyst-core
 =============
 
-A sober python base library for python 2.7 or python 3. (`Full Documentation`_)
+A sober python base library for python 3. (`Full Documentation`_)
 
 .. _`Full Documentation`: https://python-amethyst-core.readthedocs.io/en/latest/index.html
 

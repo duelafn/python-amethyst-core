@@ -1,5 +1,8 @@
 
-amethyst-core 0.8.6
+amethyst-core 0.8.7
+  - INCOMPATIBLE: Remove python 2 support
+
+amethyst-core 0.8.6 released 2021-07-05
   - WARNING: This is the last release supporting python 2
   - INCOMPATIBLE: Remove Attr.__eq__ and Attr.__ne__, they aren't always what one wants
   - bugfix: amethyst_inflate/amethyst_deflate are recursive

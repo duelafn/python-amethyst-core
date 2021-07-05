@@ -25,8 +25,6 @@ setuptools.setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy',
@@ -39,7 +37,6 @@ setuptools.setup(
     description  = "A sober python base library",
     long_description = readme,
     packages     = setuptools.find_packages(),
-    requires     = [ "six", ],
     namespace_packages = [ 'amethyst' ],
     test_suite   = 'setup.my_test_suite',
 )
