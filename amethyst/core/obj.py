@@ -508,9 +508,9 @@ def register_amethyst_type(cls, encode, decode, name=None, overwrite=False, wrap
         else:
             name = "__{}.{}__".format(cls.__module__, cls.__name__)
     if cls in global_amethyst_encoders and not overwrite:
-        raise ValueError("Class encoder '{}' already reqistered".format(cls))
+        raise ValueError("Class encoder '{}' already registered".format(cls))
     if name in global_amethyst_hooks and not overwrite:
-        raise ValueError("Class hook '{}' already reqistered".format(name))
+        raise ValueError("Class hook '{}' already registered".format(name))
     if wrap_encode:
         global_amethyst_encoders[cls] = lambda obj: { name: encode(obj) }
     else:
