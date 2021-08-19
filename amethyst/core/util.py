@@ -19,7 +19,10 @@ tupley
 import importlib
 import inspect
 import re
+import threading
 import types
+
+_NOT_FOUND = object()
 
 
 def identity(x):
@@ -301,6 +304,9 @@ class cached_property(object):
     """
     Lazy Attribute Memoization
 
+    .. NOTE:: functools in python 3.8 includes a cached_property decorator.
+    It should be used in place of this for most cases.
+
     Creates properties with deferred calculation. Once calculated, the
     result is stored and returned from cache on subsequent access. Useful
     for expensive operations which may not be needed, or to ensure
@@ -416,9 +422,15 @@ class cached_property(object):
            will be accessed (via `getattr`, `setattr`, and `delattr`) when
            determining whether to recompute the cached property and to
            store the computed property value (see example).
+
+        .. NOTE:: If you aren't using the name or delegate options and can
+        depend on python >= 3.8, the core functools package includes a
+        cached_property decorator that should be used instead.
         """
         self.name = name
         self.delegate = delegate
+        self.lock = threading.RLock()
+
         # Simplify implementations by just coding different methods.
         # Python name mangling prevents setting self.__xxx__ directly.
         if delegate:
@@ -447,26 +459,34 @@ class cached_property(object):
 
     # object-dict storage
     def get_obj_dict(self, obj, typ=None):
-        if self.name not in obj.__dict__:
-            obj.__dict__[self.name] = self.meth(obj)
-        return obj.__dict__[self.name]
+        rv = obj.__dict__.get(self.name, _NOT_FOUND)
+        if rv is _NOT_FOUND:
+            with self.lock:
+                rv = obj.__dict__.get(self.name, _NOT_FOUND) # no races
+                if rv is _NOT_FOUND:
+                    obj.__dict__[self.name] = rv = self.meth(obj)
+        return rv
 
     def set_obj_dict(self, obj, value):
         obj.__dict__[self.name] = value
 
     def del_obj_dict(self, obj):
-        if self.name in obj.__dict__:
+        # Ignore exceptions to allow defensive clearing of the cache
+        try:
             del obj.__dict__[self.name]
+        except Exception as err:
+            pass
 
     # delegate storage
     def get_delegate(self, obj, typ=None):
         delegate = getattr(obj, self.delegate)
-        try:
-            return getattr(delegate, self.name)
-        except AttributeError:
-            pass
-        rv = self.meth(obj)
-        setattr(delegate, self.name, rv)
+        rv = getattr(delegate, self.name, _NOT_FOUND)
+        if rv is _NOT_FOUND:
+            with self.lock:
+                rv = getattr(delegate, self.name, _NOT_FOUND) # no races
+                if rv is _NOT_FOUND:
+                    rv = self.meth(obj)
+                    setattr(delegate, self.name, rv)
         return rv
 
     def set_delegate(self, obj, value):
