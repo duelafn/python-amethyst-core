@@ -3,7 +3,7 @@
 
 """
 # SPDX-License-Identifier: LGPL-3.0
-from __future__ import division, absolute_import, print_function, unicode_literals
+
 __all__ = """
 cached_property
 coalesce

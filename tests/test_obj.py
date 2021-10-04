@@ -2,12 +2,10 @@
 # -*- coding: utf-8 -*-
 # SPDX-License-Identifier: LGPL-3.0
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 import unittest
 
 import json
 import marshal
-import six
 import sqlite3
 
 import amethyst.core.obj
@@ -18,7 +16,7 @@ from amethyst.core import amethyst_deflate, amethyst_inflate
 
 class Obj(Object):
     foo = Attr(int)
-    bar = Attr(isa=six.text_type).strip()
+    bar = Attr(isa=str).strip()
     baz = Attr(float)
     bip = Attr()
 
@@ -50,11 +48,11 @@ class MyTest(unittest.TestCase):
 
         class ObjA(Object):
             foo = Attr(int)
-            bar = Attr(isa=six.text_type).strip()
+            bar = Attr(isa=str).strip()
 
         class ObjB(Object):
             foo = Attr(int)
-            bar = Attr(isa=six.text_type).strip()
+            bar = Attr(isa=str).strip()
 
         class ObjC(ObjA):
             pass
@@ -120,7 +118,7 @@ class MyTest(unittest.TestCase):
         """
         class ObjOver1(Object):
             foo = Attr(int)
-            bar = Attr(isa=six.text_type).strip()
+            bar = Attr(isa=str).strip()
 
             def croak(self, *args, **kwargs):
                 raise Exception("Bummer")
@@ -142,7 +140,7 @@ class MyTest(unittest.TestCase):
 
         myobj = ObjOver1(foo=23)
 
-        with six.assertRaisesRegex(self, Exception, r'Bummer'):
+        with self.assertRaisesRegex(Exception, r'Bummer'):
             myobj.items()
 
         myobj.other = 15
@@ -205,7 +203,7 @@ class MyTest(unittest.TestCase):
             amethyst_verifyclass = False
             amethyst_register_type = False
             foo = Attr(int)
-            bar = Attr(isa=six.text_type).strip()
+            bar = Attr(isa=str).strip()
 
         # constructors
         myobj = MyObject({ "foo": "23", "bar": "Hello " })
@@ -321,7 +319,7 @@ class MyTest(unittest.TestCase):
         # Type hints
         myobj = Obj(foo=23)
         self.assertEqual(
-            six.text_type(myobj.toJSON(sort_keys=True)),
+            str(myobj.toJSON(sort_keys=True)),
             '{{"__class__": "__{}.Obj__", "foo": 23}}'.format(self.__module__)
         )
 
@@ -329,9 +327,9 @@ class MyTest(unittest.TestCase):
         myobj = Obj.newFromJSON('{{"__class__": "__{}.Obj__", "foo":23}}'.format(self.__module__))
         self.assertEqual(myobj.foo, 23)
 
-        with six.assertRaisesRegex(self, ValueError, r'should be __{}\.Obj__'.format(self.__module__)):
+        with self.assertRaisesRegex(ValueError, r'should be __{}\.Obj__'.format(self.__module__)):
             Obj.newFromJSON('{"foo":23, "bar":"plugh"}')
-        with six.assertRaisesRegex(self, ValueError, r'expected __{}\.Obj__'.format(self.__module__)):
+        with self.assertRaisesRegex(ValueError, r'expected __{}\.Obj__'.format(self.__module__)):
             Obj.newFromJSON('{{"__class__": "__{}.ObjSer__", "foo":23}}'.format(self.__module__))
 
         # local override
@@ -343,7 +341,7 @@ class MyTest(unittest.TestCase):
             amethyst_includeclass  = False
             amethyst_verifyclass   = False
             foo = Attr(int)
-            bar = Attr(isa=six.text_type).strip()
+            bar = Attr(isa=str).strip()
 
         myobj = ObjSer1.newFromJSON('{"foo":"23", "bar":"plugh"}')
         self.assertEqual(myobj.toJSON(sort_keys=True), '{"bar": "plugh", "foo": 23}')

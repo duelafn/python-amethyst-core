@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 # SPDX-License-Identifier: LGPL-3.0
 
-from __future__ import division, absolute_import, print_function, unicode_literals
-import six.moves
 import threading
 import unittest
 
@@ -27,7 +25,7 @@ class Foo(object):
     @cached_property(delegate="local")
     def baz(self):
         self.computed += 1
-        return six.moves._thread.get_ident()
+        return threading.get_ident()
 
 class MyObject(amethyst.core.Object):
     amethyst_register_type = False

@@ -54,7 +54,6 @@ correct class and that no unexpected keys are present.
 
 """
 # SPDX-License-Identifier: LGPL-3.0
-from __future__ import division, absolute_import, print_function, unicode_literals
 
 __all__ = """
 Object
@@ -101,7 +100,7 @@ class Attr(object):
         # Stringify, then strip whitespace
         foo = Attr(str).strip()
 
-        # Python 3: Accept bytes or str, decoding if possible (only decodes
+        # Accept bytes or str, decoding if possible (only decodes
         # bytes since decode not a method of str)
         foo = Attr(isa=(bytes, str)).decode("UTF-8")
 

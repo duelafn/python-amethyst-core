@@ -2,10 +2,7 @@
 # -*- coding: utf-8 -*-
 # SPDX-License-Identifier: LGPL-3.0
 
-from __future__ import division, absolute_import, print_function, unicode_literals
 import unittest
-
-import six
 
 import os.path
 import sys
@@ -32,7 +29,7 @@ class MyTest(unittest.TestCase):
         class MyObject(Object):
             amethyst_register_type = False
             foo = Attr(int)
-            bar = Attr(isa=six.text_type).strip()
+            bar = Attr(isa=str).strip()
 
         myobj = MyObject(dict(foo=23, bar=" Hello "))
 
