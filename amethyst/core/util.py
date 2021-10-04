@@ -472,10 +472,7 @@ class cached_property(object):
 
     def del_obj_dict(self, obj):
         # Ignore exceptions to allow defensive clearing of the cache
-        try:
-            del obj.__dict__[self.name]
-        except Exception as err:
-            pass
+        obj.__dict__.pop(self.name, None)
 
     # delegate storage
     def get_delegate(self, obj, typ=None):
