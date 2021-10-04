@@ -2,9 +2,9 @@ Source: amethyst-core
 Maintainer: Dean Serenevy <dean@serenevy.net>
 Section: python
 Priority: optional
-Build-Depends: debhelper (>= 10), dh-python,
- python3-all, python3-setuptools, python3-six, python3-pytest, python3-pytest-cov
-Standards-Version: 4.4.0
+Build-Depends: debhelper (>= 12), debhelper-compat (= 12), dh-python,
+ python3-all, python3-setuptools, python3-pytest, python3-pytest-cov
+Standards-Version: 4.5.0
 
 Package: python3-amethyst-core
 Architecture: all
