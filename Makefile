@@ -17,7 +17,7 @@ check:
 clean:
 	rm -rf build dist debbuild _doc .tox amethyst_core.egg-info
 	rm -f MANIFEST
-	pyclean .
+	python3 setup.py clean
 
 debbuild: test sdist
 	@head -n1 debian/changelog | grep "(${PKG_VERSION}-1)" debian/changelog || (/bin/echo -e "\e[1m\e[91m** debian/changelog requires update **\e[0m" && false)
