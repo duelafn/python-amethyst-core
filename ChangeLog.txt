@@ -1,6 +1,8 @@
 
 amethyst-core 0.8.7
   - INCOMPATIBLE: Remove python 2 support
+  - Object() is True in boolean context even if empty
+  - cached_property: threadsafe and add references to functools.cached_property
 
 amethyst-core 0.8.6 released 2021-07-05
   - WARNING: This is the last release supporting python 2
