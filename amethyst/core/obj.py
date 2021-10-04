@@ -779,6 +779,9 @@ class Object(BaseObject):
     def __repr__(self):
         return repr(self.dict)
 
+    def __bool__(self):
+        return True
+
     def __len__(self):
         """ """
         return len(self.dict)
