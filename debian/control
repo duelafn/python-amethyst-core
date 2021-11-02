@@ -9,6 +9,6 @@ Standards-Version: 4.5.0
 Package: python3-amethyst-core
 Architecture: all
 Depends: ${misc:Depends}, ${python3:Depends}
-Description: A sober python base library (Python 3)
+Description: Sober Python base library (Python 3)
  Provides a base object class which can serializes itself to JSON and
  includes additional utility functions.
