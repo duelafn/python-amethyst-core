@@ -1,3 +1,9 @@
+amethyst-core (0.9.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Dean Serenevy <dean@serenevy.net>  Sat, 04 Feb 2023 19:06:04 -0500
+
 amethyst-core (0.8.7-1) unstable; urgency=low
 
   * New upstream release

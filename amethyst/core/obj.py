@@ -703,7 +703,7 @@ class Object(BaseObject):
     an exception will be thrown if it is not found.
     """
 
-    amethyst_import_strategy = "strict"
+    amethyst_import_strategy = "strict"  # noqa NIC002: flake is wrong, allowed by PEP 257
     """
     When "strict" (the default), then loading data from JSON or a
     dictionary via :py:func:`amethyst_load_data()` requires all keys present in the data

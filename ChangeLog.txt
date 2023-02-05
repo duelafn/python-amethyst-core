@@ -1,5 +1,8 @@
 
-amethyst-core 0.8.7
+amethyst-core 0.9.0 released 2023-02-04
+  - INCOMPATIBLE: Fix serialization of set and frozenset
+
+amethyst-core 0.8.7 released 2021-10-04
   - INCOMPATIBLE: Remove python 2 support
   - Object() is True in boolean context even if empty
   - cached_property: threadsafe and add references to functools.cached_property
