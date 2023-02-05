@@ -599,8 +599,8 @@ def amethyst_inflate(obj, inflator=None, start=0):
 
 
 # Python3 moved the builtin modules around, force the name so py3 can talk to py2
-register_amethyst_type(set, list, set, name="__set__")
-register_amethyst_type(frozenset, list, frozenset, name="__frozenset__")
+register_amethyst_type(set, list, set, name="__set__", wrap_encode=False)
+register_amethyst_type(frozenset, list, frozenset, name="__frozenset__", wrap_encode=False)
 
 
 class AttrsMetaclass(type):
