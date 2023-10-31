@@ -22,7 +22,7 @@ class Foo(object):
         self.computed += 1
         return 42
 
-    @cached_property(delegate="local")
+    @cached_property(delegate="local") # incompatible with functools
     def baz(self):
         self.computed += 1
         return threading.get_ident()
@@ -93,6 +93,8 @@ class MyTest(unittest.TestCase):
     def test_cached_property(self):
         foo = Foo()
         computed = 0
+        # del before computing does not raise error
+        del foo.bar # incompatible with functools
 
         self.assertEqual(foo.computed, computed, "Not calculated yet")
         computed += 1
@@ -105,7 +107,7 @@ class MyTest(unittest.TestCase):
         self.assertEqual(foo.bar, 12, "Assigned")
         self.assertEqual(foo.computed, computed, "Calculated once (still)")
 
-        del foo.bar
+        del foo.bar # incompatible with functools
         computed += 1
         self.assertEqual(foo.bar, 42, "Recomputed")
         self.assertEqual(foo.computed, computed, "Calculated twice")
@@ -115,7 +117,7 @@ class MyTest(unittest.TestCase):
         self.assertEqual(foo.bar, 12, "Assigned")
         self.assertEqual(foo.computed, computed, "Never calculated")
 
-        del foo.bar
+        del foo.bar # incompatible with functools
         computed += 1
         self.assertEqual(foo.bar, 42, "Cleared / Computed")
         self.assertEqual(foo.computed, computed, "Calculated finally")
@@ -127,13 +129,14 @@ class MyTest(unittest.TestCase):
         self.assertEqual(foo.computed, computed)
         self.assertEqual(foo.baz, ident)
         self.assertEqual(foo.computed, computed)
-        self.assertEqual(foo.local.baz, ident, msg="Written to correct attribute")
+        self.assertEqual(foo.local.baz, ident, msg="Written to correct attribute") # incompatible with functools
 
         computed += 1
-        del foo.baz
+        del foo.baz # incompatible with functools
         self.assertEqual(foo.baz, ident)
         self.assertEqual(foo.computed, computed)
 
+        # incompatible with functools (uses delegate option):
         thr = threading.Thread(target=self._thread_test_cached_property, args=(foo, ident, computed))
         thr.start()
         thr.join()

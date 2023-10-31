@@ -304,14 +304,24 @@ class cached_property(object):
     """
     Lazy Attribute Memoization
 
-    .. NOTE:: functools in python 3.8 includes a cached_property decorator.
-    It should be used in place of this for most cases.
-
     Creates properties with deferred calculation. Once calculated, the
     result is stored and returned from cache on subsequent access. Useful
     for expensive operations which may not be needed, or to ensure
     just-in-time construction (I like using this for database connections
     or building subwidgets in GUI classes, see examples below).
+
+    .. NOTE:: functools in python 3.8 includes a cached_property decorator. It should
+       be used in place of this for most cases. Reasons to use this implementation
+       over the one in functools are:
+
+       - The `name` option to override key name in object __dict__
+
+       - The `delegate` option to delegate to another property rather than to __dict__
+
+       - This implements `__delete__` so `del` on the property clears the cached value
+         (allowing to be regenerated). Using `del` on the functools property will delete
+         the property itself breaking the caching ability. Obviously, I think this
+         version better matches reasonable and expected behavior.
 
     Decorator Usage (most common)::
 
@@ -423,9 +433,9 @@ class cached_property(object):
            determining whether to recompute the cached property and to
            store the computed property value (see example).
 
-        .. NOTE:: If you aren't using the name or delegate options and can
-        depend on python >= 3.8, the core functools package includes a
-        cached_property decorator that should be used instead.
+        .. NOTE:: If you aren't using the name or delegate options, are not using the
+        del regeneration feature, and can depend on python >= 3.8, the core functools
+        package includes a cached_property decorator that should be used instead.
         """
         self.name = name
         self.delegate = delegate
