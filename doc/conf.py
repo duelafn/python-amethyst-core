@@ -30,7 +30,7 @@ release = version
 exclude_patterns = [ '_doc', 'Thumbs.db', '.DS_Store' ]
 
 
-language = None
+language = 'en'
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
