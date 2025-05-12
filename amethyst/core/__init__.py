@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 A sober python base library
 """
