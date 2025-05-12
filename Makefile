@@ -36,9 +36,6 @@ test:
 test-pypy:
 	for f in tests/test_*.py; do pypy3 -E -B "$$f"; done
 
-tox:
-	tox
-
 wheel:
 	python3 setup.py bdist_wheel
 
