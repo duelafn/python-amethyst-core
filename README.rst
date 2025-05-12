@@ -6,12 +6,6 @@ A sober python base library for python 3. (`Full Documentation`_)
 
 .. _`Full Documentation`: https://python-amethyst-core.readthedocs.io/en/latest/index.html
 
-.. CAUTION:: EXPERIMENTAL CODE. The interface to this library is not yet
-   stable. At this time, improvements will be made to the interface without
-   regard to backward compatibility. Backward-incompatible changes will not
-   necessarily be documented in the changelog, and changes may be added
-   which eat your puppy.
-
 
 A Generic Serializable Object
 -----------------------------
