@@ -244,7 +244,7 @@ class Attr(object):
 
         if self.isa:
             if not isinstance(value, self.isa):
-                raise ValueError("Value of '{}' is not an instance of {}".format(key, str(self.isa)))
+                raise ValueError("Value of '{}' ({}) is not an instance of {}".format(key, str(value.__class__), str(self.isa)))
 
         if self.verify:
             if not self.verify(value):
@@ -731,7 +731,7 @@ class Object(BaseObject):
 
         # Special-case of single argument:
         if len(args) == 1 and not kwargs and isinstance(args[0], type(self)):
-            warnings.warn("amethyst shallow-copy, this use case may become deprecated. If you have a use for it, notify upstream developer soon!", DeprecationWarning)
+            warnings.warn("amethyst shallow-copy, this use case may become deprecated. If you have a use for it, notify upstream developer soon!", DeprecationWarning, stacklevel=2)
             # - NOT A COPY! Primary case of Object(Object()) is
             #   re-import by JSON Hook, thus we just need another view
             #   of the same data (returning the same object would also
