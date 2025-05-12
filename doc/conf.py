@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- General configuration ------------------------------------------------
 
 project   = u'Amethyst-core'
-copyright = u'2018, Dean Serenevy'
+copyright = u'2018-2025, Dean Serenevy'
 author    = u'Dean Serenevy'
 
 extensions     = [
