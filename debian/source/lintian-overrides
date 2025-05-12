@@ -1,4 +1,4 @@
-# I support multiple debian releases
+# I support multiple Debian releases
 amethyst-core source: out-of-date-standards-version
-# in-repository debian folder doesn't need a watch file
+# in-repository Debian folder doesn't need a watch file
 amethyst-core source: debian-watch-file-is-missing
